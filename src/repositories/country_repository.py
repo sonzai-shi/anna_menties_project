@@ -43,19 +43,13 @@ async def find_country(country_id: UUID):
         }
 
 
-async def update_country(country_data: CountrySchemaCreate):
+async def update_country(country_data: CountrySchemaCreate, country_id: UUID):
     async with get_session() as session:
-        query = (
-            select(CountryModel)
-            .where(CountryModel.name == country_data.country_name)
-            .options(selectinload(CountryModel.capital))
-        )
-        result = await session.execute(query)
-        country = result.scalar_one_or_none()
-
+        country = await _find(session, country_id)
         if country is None:
             return None
 
+        country.name = country_data.country_name
         country.capital.name = country_data.capital.capital_name
         return {
             'id': country.id,

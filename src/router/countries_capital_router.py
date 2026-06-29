@@ -17,9 +17,9 @@ async def get_country(id_country: UUID):
     country = await find_country(id_country)
     return {'Результат' : country}
 
-@router.put("/country")
-async def put_country(data:CountrySchemaCreate):
-    country = await update_country(data)
+@router.put("/country/{id_country}")
+async def put_country(data:CountrySchemaCreate, id_country: UUID ):
+    country = await update_country(data, id_country)
     return {'Результат' : country}
 
 @router.delete("/country/{id_country}")
