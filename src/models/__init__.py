@@ -1,0 +1,1 @@
+from src.models import capitals, countries, users
