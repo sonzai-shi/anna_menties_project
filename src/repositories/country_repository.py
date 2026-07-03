@@ -65,7 +65,8 @@ async def delete_country(country_id: UUID):
         country = await _find(session, country_id)
         if country is None:
             return None
-        await session.delete(country)
+        country.is_deleted = True
+        country.capital.is_deleted = True
         return True
 
 
@@ -73,6 +74,7 @@ async def _find(session, country_id: UUID):
         query = (
             select(CountryModel)
             .where(CountryModel.id == country_id)
+            .where(CountryModel.is_deleted == False)
             .options(selectinload(CountryModel.capital))
         )
         result = await session.execute(query)

@@ -5,7 +5,6 @@ from src.db import get_session
 from src.models.students import StudentModel
 from src.models.courses import CourseModel
 from src.schemas.course_schema import CourseSchemaCreate, CourseSchemaUpdate
-from src.schemas.student_schema import StudentSchemaUpdate
 
 
 async def post_course(course_data: CourseSchemaCreate):
@@ -74,7 +73,9 @@ async def delete_course(course_id: UUID):
         course = await _find(session, course_id)
         if course is None:
             return None
-        await session.delete(course)
+        course.is_deleted = True
+        for student in course.students:
+            student.is_deleted = True
         return True
 
 
@@ -82,6 +83,7 @@ async def _find(session, country_id: UUID):
     query = (
         select(CourseModel)
         .where(CourseModel.id == country_id)
+        .where(CourseModel.is_deleted == False)
         .options(selectinload(CourseModel.students))
     )
     result = await session.execute(query)
