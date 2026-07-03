@@ -1,8 +1,7 @@
-from unittest import result
 from uuid import UUID
 from fastapi import APIRouter
 from src.schemas.course_schema import CourseSchemaCreate, CourseSchemaUpdate
-import src.repositories.corse_repository as cr
+import src.repositories.course_repository as cr
 
 router = APIRouter()
 

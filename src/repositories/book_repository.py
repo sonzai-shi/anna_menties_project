@@ -35,14 +35,18 @@ async def post_books(data: BookSchemaCreate):
         }
 
 async def _find_authors_name(session, name: str):
-    query = select(AuthorModel).where(AuthorModel.name == name)
+    query = (
+        select(AuthorModel)
+        .where(AuthorModel.name == name)
+        .where(AuthorModel.is_deleted == False)
+    )
     result = await session.execute(query)
     return result.scalar_one_or_none()
 
 
 async def get_book(book_id: UUID):
     async with get_session() as session:
-        db_books = _find_book(session, book_id)
+        db_books = await _find_book(session, book_id)
         if db_books is None:
             return None
         return {
@@ -57,7 +61,7 @@ async def get_book(book_id: UUID):
 
 async def put_book(book_id: UUID, book_data: BookSchemaUpdate):
     async with get_session() as session:
-        db_books = _find_book(session, book_id)
+        db_books = await _find_book(session, book_id)
         if db_books is None:
             return None
         db_books.title = book_data.title
@@ -74,7 +78,7 @@ async def put_book(book_id: UUID, book_data: BookSchemaUpdate):
         return {
             'id': db_books.id,
             'title': db_books.title,
-            'students': [
+            'authors': [
                 {'id': author.id, 'name': author.name}
                 for author in db_books.authors
             ],
