@@ -1,1 +1,1 @@
-from src.models import capitals, countries, users
+from src.models import capitals, countries, users, courses, students

@@ -6,7 +6,6 @@ from sqlalchemy.orm import selectinload
 from src.db import get_session
 from src.models.capitals import CapitalModel
 from src.models.countries import CountryModel
-
 from src.schemas.country_schema import CountrySchemaCreate
 
 
@@ -78,6 +77,5 @@ async def _find(session, country_id: UUID):
         )
         result = await session.execute(query)
         return result.scalar_one_or_none()
-
 
 
