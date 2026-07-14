@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column
-from src.models.database import Base
+from src.models.base import Base
 from uuid import UUID, uuid4
 
 class UserModel(Base):
