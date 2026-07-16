@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from src.schemas.capital_schema import CapitalSchemaCreate
+from src.schemas.capital import CapitalSchemaCreate
 
 
 class CountrySchemaCreate(BaseModel):

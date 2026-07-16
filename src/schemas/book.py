@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from pydantic import BaseModel
-from src.schemas.author_schema import AuthorSchemaCreate, AuthorSchemaUpdate
+from src.schemas.author import AuthorSchemaCreate, AuthorSchemaUpdate
 
 
 class BookSchemaCreate(BaseModel):

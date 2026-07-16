@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from src.schemas.student_schema import StudentSchemaCreate, StudentSchemaUpdate
+from src.schemas.student import StudentSchemaCreate, StudentSchemaUpdate
 
 
 class CourseSchemaCreate(BaseModel):
