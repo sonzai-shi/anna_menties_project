@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 from src.db import get_session
 from src.models.authors import AuthorModel
 from src.models.books import BookModel
-from src.schemas.book_schema import BookSchemaCreate, BookSchemaUpdate
+from src.schemas.book import BookSchemaCreate, BookSchemaUpdate
 
 
 async def post_books(data: BookSchemaCreate):

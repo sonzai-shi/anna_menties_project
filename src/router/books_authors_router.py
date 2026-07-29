@@ -1,6 +1,6 @@
 from uuid import UUID
 from fastapi import APIRouter
-from src.schemas.book_schema import BookSchemaCreate, BookSchemaUpdate
+from src.schemas.book import BookSchemaCreate, BookSchemaUpdate
 import src.repositories.book_repository as br
 
 router = APIRouter()

@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter
 from src.repositories.country_repository import create_country, find_country, update_country, delete_country
-from src.schemas.country_schema import CountrySchemaCreate
+from src.schemas.country import CountrySchemaCreate
 
 router = APIRouter()
 

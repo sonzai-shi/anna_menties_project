@@ -12,5 +12,8 @@ class CapitalModel(Base):
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     name: Mapped[str] = mapped_column(sa.String(50))
 
+    mayor: Mapped[str | None] = mapped_column(sa.String(100), nullable=True)
+    population: Mapped[int] = mapped_column(sa.BigInteger)
+
     country_id: Mapped[UUID] = mapped_column(sa.ForeignKey('countries.id', ondelete='CASCADE'), unique=True)
     country: Mapped['CountryModel'] = relationship(back_populates='capital')

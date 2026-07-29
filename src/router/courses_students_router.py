@@ -1,6 +1,6 @@
 from uuid import UUID
 from fastapi import APIRouter
-from src.schemas.course_schema import CourseSchemaCreate, CourseSchemaUpdate
+from src.schemas.course import CourseSchemaCreate, CourseSchemaUpdate
 import src.repositories.course_repository as cr
 
 router = APIRouter()

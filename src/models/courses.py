@@ -13,4 +13,8 @@ class CourseModel(Base):
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     title: Mapped[str] = mapped_column(sa.String(150))
 
+    description: Mapped[str] = mapped_column(sa.String(1000))
+    mentor: Mapped[str] = mapped_column(sa.String(150))
+    teaching_hours: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)
+
     students: Mapped[list['StudentModel']] = relationship(back_populates="course", cascade="all, delete-orphan")

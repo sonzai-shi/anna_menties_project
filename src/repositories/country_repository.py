@@ -6,7 +6,7 @@ from sqlalchemy.orm import selectinload
 from src.db import get_session
 from src.models.capitals import CapitalModel
 from src.models.countries import CountryModel
-from src.schemas.country_schema import CountrySchemaCreate
+from src.schemas.country import CountrySchemaCreate
 
 
 async def create_country(country_data: CountrySchemaCreate):

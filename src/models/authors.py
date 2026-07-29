@@ -14,4 +14,8 @@ class AuthorModel(Base):
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     name: Mapped[str] = mapped_column(sa.String(50))
 
+    age: Mapped[int] = mapped_column(sa.Integer)
+    location: Mapped[str| None] = mapped_column(sa.String(150), nullable=True)
+    citizenship: Mapped[str | None] = mapped_column(sa.String(150), nullable=True)
+
     books: Mapped[list['BookModel']] = relationship(secondary=book_author_table, back_populates='authors')

@@ -4,7 +4,7 @@ from sqlalchemy.orm import selectinload
 from src.db import get_session
 from src.models.students import StudentModel
 from src.models.courses import CourseModel
-from src.schemas.course_schema import CourseSchemaCreate, CourseSchemaUpdate
+from src.schemas.course import CourseSchemaCreate, CourseSchemaUpdate
 
 
 async def post_course(course_data: CourseSchemaCreate):
