@@ -21,7 +21,7 @@ class BookSchemaCreate(BaseModel):
 
     @field_validator('genre', 'description', 'title')
     @classmethod
-    def not_empty(cls, v):
+    def strings_not_empty(cls, v):
         if v is None:
             return v
         if isinstance(v, list):

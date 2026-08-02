@@ -20,7 +20,7 @@ class CourseSchemaCreate(BaseModel):
 
     @field_validator('title', 'description', 'mentor')
     @classmethod
-    def not_empty(cls, v: str) -> str | None:
+    def strings_not_empty(cls, v: str) -> str | None:
         if v is None:
             return v
         if not v.replace(' ', ''):
