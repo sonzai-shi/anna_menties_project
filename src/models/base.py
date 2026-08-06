@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-
+from uuid import UUID, uuid4
 import sqlalchemy as sa
 from sqlalchemy.orm import DeclarativeMeta, declarative_base, Mapped, mapped_column
 
@@ -8,6 +8,8 @@ metadata = sa.MetaData()
 
 class BaseServiceModel:
     """Базовый класс для таблиц сервиса."""
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+
     created_at: Mapped[datetime] = mapped_column(
         sa.DateTime(timezone=True),
         server_default=sa.func.now(),

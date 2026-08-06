@@ -2,7 +2,6 @@ from datetime import date
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.models.base import Base
-from uuid import UUID, uuid4
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -19,9 +18,8 @@ book_author_table = sa.Table(
 
 class BookModel(Base):
     __tablename__ = 'books'
-    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
-    title: Mapped[str] = mapped_column(sa.String(150))
 
+    title: Mapped[str] = mapped_column(sa.String(150))
     description: Mapped[str] = mapped_column(sa.String(1000))
     genre: Mapped[list[str] | None] = mapped_column(sa.ARRAY(sa.String(150)), nullable=True)
     date_written: Mapped[date] = mapped_column(sa.Date)
