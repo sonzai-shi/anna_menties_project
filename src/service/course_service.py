@@ -2,7 +2,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.models.students import StudentModel
 from src.models.courses import CourseModel
-from src.schemas.course import CourseSchemaCreate, CourseSchemaResponse, CourseSchemaUpdate
+from src.schemas.course import CourseSchemaCreate, CourseSchemaResponse, CourseSchemaUpdate, CourseSchemaPagination
 import src.repositories.course_repository as course_repo
 
 
@@ -31,6 +31,17 @@ async def get_course(course_id: UUID, session: AsyncSession):
     if  result is None:
         return None
     return CourseSchemaResponse.model_validate(result)
+
+
+async def get_courses(offset: int, limit: int, session: AsyncSession):
+    result = await course_repo.find_courses(session, offset, limit)
+    if  result is None:
+        return None
+    return CourseSchemaPagination(
+        items=[CourseSchemaResponse.model_validate(course) for course in result],
+        offset=offset,
+        limit=limit,
+    )
 
 
 async def put_course(course_id: UUID, data: CourseSchemaUpdate, session: AsyncSession):

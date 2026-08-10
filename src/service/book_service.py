@@ -2,7 +2,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.models.authors import AuthorModel
 from src.models.books import BookModel
-from src.schemas.book import BookSchemaCreate, BookSchemaResponse, BookSchemaUpdate
+from src.schemas.book import BookSchemaCreate, BookSchemaResponse, BookSchemaUpdate, BookSchemaPagination
 import src.repositories.book_repository as book_repo
 import src.repositories.author_repository as author_repo
 
@@ -38,6 +38,18 @@ async def get_book(book_id: UUID, session: AsyncSession):
     if result is None:
         return None
     return BookSchemaResponse.model_validate(result)
+
+
+async def get_books(offset: int, limit: int, session: AsyncSession):
+    result = await book_repo.find_books(session, offset, limit)
+    if result is None:
+        return None
+
+    return BookSchemaPagination(
+        items=[BookSchemaResponse.model_validate(book) for book in result],
+        offset=offset,
+        limit=limit,
+    )
 
 
 async def put_book(book_id: UUID, book_data: BookSchemaUpdate, session: AsyncSession):

@@ -2,7 +2,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.models.capitals import CapitalModel
 from src.models.countries import CountryModel
-from src.schemas.country import CountrySchemaCreate, CountrySchemaResponse, CountrySchemaUpdate
+from src.schemas.country import CountrySchemaCreate, CountrySchemaResponse, CountrySchemaUpdate, CountrySchemaPagination
 from src.repositories import country_repository as country_repo
 
 
@@ -28,6 +28,17 @@ async def find_country(country_id: UUID, session: AsyncSession):
     if result is None:
         return None
     return CountrySchemaResponse.model_validate(result)
+
+
+async def find_countries(offset: int, limit: int, session: AsyncSession):
+    result = await country_repo.find_countries(session, offset, limit)
+    if result is None:
+        return None
+    return CountrySchemaPagination(
+        items=[CountrySchemaResponse.model_validate(country) for country in result],
+        offset=offset,
+        limit=limit,
+    )
 
 
 async def update_country(country_id: UUID, data: CountrySchemaUpdate, session: AsyncSession):

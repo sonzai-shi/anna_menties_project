@@ -23,6 +23,18 @@ async def get_country(id_country: UUID, session: AsyncSession = Depends(get_sess
         )
     return {'result' : result}
 
+
+@router.get("/country", status_code=status.HTTP_200_OK)
+async def get_countries(offset: int, limit: int, session: AsyncSession = Depends(get_session)):
+    result = await country_service.find_countries(offset, limit, session)
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='Country not found'
+        )
+    return {'result' : result}
+
+
 @router.put("/country/{id_country}", status_code=status.HTTP_200_OK)
 async def put_country(id_country: UUID, data: CountrySchemaUpdate, session: AsyncSession = Depends(get_session)):
     result = await country_service.update_country(id_country, data, session)

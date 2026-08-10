@@ -84,3 +84,9 @@ class BookSchemaUpdate(BaseModel):
     @classmethod
     def check_letter_only(cls, v: list[str]) -> list[str] | None:
         return letter_only(v)
+
+
+class BookSchemaPagination(BaseModel):
+    items: list[BookSchemaResponse]
+    offset: int
+    limit: int

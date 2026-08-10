@@ -46,6 +46,7 @@ class CountrySchemaResponse(BaseModel):
     population: int
     currency: str | None
 
+
 class CountrySchemaUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=50)
     capital: CapitalSchemaUpdate | None = Field(default=None)
@@ -62,3 +63,9 @@ class CountrySchemaUpdate(BaseModel):
     @classmethod
     def check_not_empty(cls, v: str) -> str | None:
         return not_empty(v)
+
+
+class CountrySchemaPagination(BaseModel):
+    items: list[CountrySchemaResponse]
+    offset: int
+    limit: int

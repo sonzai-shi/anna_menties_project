@@ -75,3 +75,9 @@ class CourseSchemaUpdate(BaseModel):
     @classmethod
     def check_letter_only(cls, v: str) -> str | None:
         return letter_only(v)
+
+
+class CourseSchemaPagination(BaseModel):
+    items: list[CourseSchemaResponse]
+    offset: int
+    limit: int

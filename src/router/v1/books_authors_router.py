@@ -23,6 +23,18 @@ async def get_book(book_id: UUID, session: AsyncSession = Depends(get_session)):
         )
     return {'result': result}
 
+
+@router.get('/books', status_code=status.HTTP_200_OK)
+async def get_books(offset: int, limit: int, session: AsyncSession = Depends(get_session)):
+    result = await book_service.get_books(offset, limit, session)
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='Book not found'
+        )
+    return {'result': result}
+
+
 @router.put('/books/{book_id}', status_code=status.HTTP_200_OK)
 async def put_book(book_id: UUID, data: BookSchemaUpdate, session: AsyncSession = Depends(get_session)):
     result = await book_service.put_book(book_id, data, session)

@@ -20,3 +20,15 @@ async def find_country(session: AsyncSession, country_id: UUID):
     )
     result = await session.execute(query)
     return result.scalar_one_or_none()
+
+
+async def find_countries(session: AsyncSession, offset: int, limit: int):
+    query = (
+        select(CountryModel)
+        .where(CountryModel.is_deleted == False)
+        .options(selectinload(CountryModel.capital))
+        .offset(offset)
+        .limit(limit)
+    )
+    result = await session.execute(query)
+    return result.scalars().all()
