@@ -4,18 +4,20 @@ from src.db import get_session
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.schemas.book import BookSchemaCreate, BookSchemaUpdate
-import src.service.book_service as book_service
+from src.service.book_service import BookService
 
-router = APIRouter()
+router = APIRouter(prefix='/book')
 
-@router.post('/books', status_code=status.HTTP_201_CREATED)
+@router.post(path='', status_code=status.HTTP_201_CREATED)
 async def post_books(data: BookSchemaCreate, session: AsyncSession = Depends(get_session)):
-    result = await book_service.post_books(data, session)
+    book_service = BookService(session)
+    result = await book_service.create_books(data)
     return {'result': result}
 
-@router.get('/books/{book_id}', status_code=status.HTTP_200_OK)
+@router.get('/{book_id}')
 async def get_book(book_id: UUID, session: AsyncSession = Depends(get_session)):
-    result = await book_service.get_book(book_id, session)
+    book_service = BookService(session)
+    result = await book_service.read_book(book_id)
     if result is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -24,9 +26,10 @@ async def get_book(book_id: UUID, session: AsyncSession = Depends(get_session)):
     return {'result': result}
 
 
-@router.get('/books', status_code=status.HTTP_200_OK)
+@router.get(path='')
 async def get_books(offset: int, limit: int, session: AsyncSession = Depends(get_session)):
-    result = await book_service.get_books(offset, limit, session)
+    book_service = BookService(session)
+    result = await book_service.read_books(offset, limit)
     if result is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -35,9 +38,10 @@ async def get_books(offset: int, limit: int, session: AsyncSession = Depends(get
     return {'result': result}
 
 
-@router.put('/books/{book_id}', status_code=status.HTTP_200_OK)
+@router.put('/{book_id}')
 async def put_book(book_id: UUID, data: BookSchemaUpdate, session: AsyncSession = Depends(get_session)):
-    result = await book_service.put_book(book_id, data, session)
+    book_service = BookService(session)
+    result = await book_service.update_book(book_id, data)
     if result is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -45,9 +49,10 @@ async def put_book(book_id: UUID, data: BookSchemaUpdate, session: AsyncSession 
         )
     return {'result': result}
 
-@router.delete('/books/{book_id}', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{book_id}', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_book(book_id: UUID, session: AsyncSession = Depends(get_session)):
-    result = await book_service.delete_book(book_id, session)
+    book_service = BookService(session)
+    result = await book_service.delete_book(book_id)
     if result is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
