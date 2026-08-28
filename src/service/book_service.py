@@ -1,4 +1,5 @@
 from uuid import UUID
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.models.authors import AuthorModel
 from src.models.books import BookModel
@@ -32,16 +33,12 @@ class BookService:
 
 
     async def read_book(self, book_id: UUID):
-        result = await self.book_repo.find_one(BookModel, book_id, 'authors')
-        if result is None:
-            return None
+        result = await self.find_book(book_id)
         return BookSchemaResponse.model_validate(result)
 
 
     async def read_books(self, offset: int, limit: int):
         result = await self.book_repo.find_many(BookModel, 'authors', offset, limit)
-        if result is None:
-            return None
 
         return BookSchemaPagination(
             items=[BookSchemaResponse.model_validate(book) for book in result],
@@ -51,9 +48,7 @@ class BookService:
 
 
     async def update_book(self, book_id: UUID, book_data: BookSchemaUpdate):
-        book = await self.book_repo.find_one(BookModel, book_id, 'authors')
-        if book is None:
-            return None
+        book = await self.find_book(book_id)
 
         if book_data.title is not None:
             book.title = book_data.title
@@ -83,8 +78,16 @@ class BookService:
 
 
     async def delete_book(self, book_id: UUID):
+        result = await self.find_book(book_id)
+        result.is_deleted = True
+        return 'The book has been removed.'
+
+
+    async def find_book(self, book_id: UUID):
         result = await self.book_repo.find_one(BookModel, book_id, 'authors')
         if result is None:
-            return None
-        result.is_deleted = True
-        return True
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail='Book not found.'
+            )
+        return result

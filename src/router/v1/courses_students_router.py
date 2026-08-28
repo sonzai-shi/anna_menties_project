@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, HTTPException, Depends
+from fastapi import APIRouter, status, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.db import get_session
 from src.schemas.course import CourseSchemaCreate, CourseSchemaUpdate
@@ -19,11 +19,6 @@ async def create_course(data: CourseSchemaCreate, session: AsyncSession = Depend
 async def read_course(course_id: UUID, session: AsyncSession = Depends(get_session)):
     course_service = CourseService(session)
     result = await course_service.read_course(course_id)
-    if result is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='Course not found'
-        )
     return result
 
 
@@ -31,11 +26,6 @@ async def read_course(course_id: UUID, session: AsyncSession = Depends(get_sessi
 async def read_courses(offset: int, limit: int, session: AsyncSession = Depends(get_session)):
     course_service = CourseService(session)
     result = await course_service.read_courses(offset, limit)
-    if result is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='Course not found'
-        )
     return result
 
 
@@ -43,11 +33,6 @@ async def read_courses(offset: int, limit: int, session: AsyncSession = Depends(
 async def update_course(course_id: UUID, data: CourseSchemaUpdate, session: AsyncSession = Depends(get_session)):
     course_service = CourseService(session)
     result = await course_service.update_course(course_id, data)
-    if result is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='Course not found'
-        )
     return result
 
 
@@ -55,9 +40,4 @@ async def update_course(course_id: UUID, data: CourseSchemaUpdate, session: Asyn
 async def delete_course(course_id: UUID, session: AsyncSession = Depends(get_session)):
     course_service = CourseService(session)
     result = await course_service.delete_course(course_id)
-    if result is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='Course not found'
-        )
     return None

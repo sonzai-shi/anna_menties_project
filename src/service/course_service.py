@@ -1,4 +1,5 @@
 from uuid import UUID
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.models.students import StudentModel
 from src.models.courses import CourseModel
@@ -31,16 +32,12 @@ class CourseService:
 
 
     async def read_course(self, course_id: UUID):
-        result = await self.course_repo.find_one(CourseModel, course_id, 'students')
-        if  result is None:
-            return None
+        result = await self.find_course(course_id)
         return CourseSchemaResponse.model_validate(result)
 
 
     async def read_courses(self, offset: int, limit: int):
         result = await self.course_repo.find_many(CourseModel, 'students', offset, limit)
-        if  result is None:
-            return None
         return CourseSchemaPagination(
             items=[CourseSchemaResponse.model_validate(course) for course in result],
             offset=offset,
@@ -49,9 +46,7 @@ class CourseService:
 
 
     async def update_course(self, course_id: UUID, data: CourseSchemaUpdate):
-        course = await self.course_repo.find_one(CourseModel, course_id, 'students')
-        if course is None:
-            return None
+        course = await self.find_course(course_id)
 
         if data.title is not None:
             course.title = data.title
@@ -82,10 +77,18 @@ class CourseService:
 
 
     async def delete_course(self, course_id: UUID):
-        result = await self.course_repo.find_one(CourseModel, course_id, 'students')
-        if result is None:
-            return None
+        result = await self.find_course(course_id)
         result.is_deleted = True
         for student in result.students:
             student.is_deleted = True
-        return True
+        return 'The course has been removed.'
+
+
+    async def find_course(self, course_id: UUID):
+        result = await self.course_repo.find_one(CourseModel, course_id, 'students')
+        if result is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail='Course not found.'
+            )
+        return result

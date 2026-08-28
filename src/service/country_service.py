@@ -1,4 +1,5 @@
 from uuid import UUID
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.models.capitals import CapitalModel
 from src.models.countries import CountryModel
@@ -28,16 +29,12 @@ class CountryService:
 
 
     async def read_country(self, country_id: UUID):
-        result = await self.country_repo.find_one(CountryModel, country_id, 'capital')
-        if result is None:
-            return None
+        result = await self.find_country(country_id)
         return CountrySchemaResponse.model_validate(result)
 
 
     async def read_countries(self, offset: int, limit: int):
         result = await self.country_repo.find_many(CountryModel,'capital', offset, limit)
-        if result is None:
-            return None
         return CountrySchemaPagination(
             items=[CountrySchemaResponse.model_validate(country) for country in result],
             offset=offset,
@@ -46,9 +43,7 @@ class CountryService:
 
 
     async def update_country(self, country_id: UUID, data: CountrySchemaUpdate):
-        country = await self.country_repo.find_one(CountryModel, country_id, 'capital')
-        if country is None:
-            return None
+        country = await self.find_country(country_id)
 
         if data.name is not None:
             country.name = data.name
@@ -71,9 +66,17 @@ class CountryService:
 
 
     async def delete_country(self, country_id: UUID):
-        result = await self.country_repo.find_one(CountryModel, country_id, 'capital')
-        if result is None:
-            return None
+        result = await self.find_country(country_id)
         result.is_deleted = True
         result.capital.is_deleted = True
-        return True
+        return 'The country has been removed.'
+
+
+    async def find_country(self, country_id: UUID):
+        result = await self.country_repo.find_one(CountryModel, country_id, 'capital')
+        if result is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail='Country not found.'
+            )
+        return result
