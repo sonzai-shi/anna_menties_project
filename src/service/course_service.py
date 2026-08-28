@@ -3,12 +3,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.models.students import StudentModel
 from src.models.courses import CourseModel
 from src.schemas.course import CourseSchemaCreate, CourseSchemaResponse, CourseSchemaUpdate, CourseSchemaPagination
-from src.repositories.course_repository import CourseRepository
+from src.repositories.repository import Repository
 
 
 class CourseService:
     def __init__(self, session: AsyncSession):
-        self.course_repo = CourseRepository(session)
+        self.course_repo = Repository(session)
 
     async def create_course(self, course_data: CourseSchemaCreate):
         course = CourseModel(
@@ -31,14 +31,14 @@ class CourseService:
 
 
     async def read_course(self, course_id: UUID):
-        result = await self.course_repo.find_course(course_id)
+        result = await self.course_repo.find_one(CourseModel, course_id, 'students')
         if  result is None:
             return None
         return CourseSchemaResponse.model_validate(result)
 
 
     async def read_courses(self, offset: int, limit: int):
-        result = await self.course_repo.find_courses(offset, limit)
+        result = await self.course_repo.find_many(CourseModel, 'students', offset, limit)
         if  result is None:
             return None
         return CourseSchemaPagination(
@@ -49,7 +49,7 @@ class CourseService:
 
 
     async def update_course(self, course_id: UUID, data: CourseSchemaUpdate):
-        course = await self.course_repo.find_course(course_id)
+        course = await self.course_repo.find_one(CourseModel, course_id, 'students')
         if course is None:
             return None
 
@@ -82,7 +82,7 @@ class CourseService:
 
 
     async def delete_course(self, course_id: UUID):
-        result = await self.course_repo.find_course(course_id)
+        result = await self.course_repo.find_one(CourseModel, course_id, 'students')
         if result is None:
             return None
         result.is_deleted = True

@@ -3,10 +3,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.models.authors import AuthorModel
 from src.models.books import BookModel
 from src.schemas.book import BookSchemaCreate, BookSchemaResponse, BookSchemaUpdate, BookSchemaPagination
-from src.repositories.book_repository import BookRepository
+from src.repositories.repository import Repository
 class BookService:
     def __init__(self, session: AsyncSession):
-        self.book_repo = BookRepository(session)
+        self.book_repo = Repository(session)
 
 
     async def create_books(self, data: BookSchemaCreate):
@@ -32,14 +32,14 @@ class BookService:
 
 
     async def read_book(self, book_id: UUID):
-        result = await self.book_repo.find_book(book_id)
+        result = await self.book_repo.find_one(BookModel, book_id, 'authors')
         if result is None:
             return None
         return BookSchemaResponse.model_validate(result)
 
 
     async def read_books(self, offset: int, limit: int):
-        result = await self.book_repo.find_books(offset, limit)
+        result = await self.book_repo.find_many(BookModel, 'authors', offset, limit)
         if result is None:
             return None
 
@@ -51,7 +51,7 @@ class BookService:
 
 
     async def update_book(self, book_id: UUID, book_data: BookSchemaUpdate):
-        book = await self.book_repo.find_book(book_id)
+        book = await self.book_repo.find_one(BookModel, book_id, 'authors')
         if book is None:
             return None
 
@@ -83,7 +83,7 @@ class BookService:
 
 
     async def delete_book(self, book_id: UUID):
-        result = await self.book_repo.find_book(book_id)
+        result = await self.book_repo.find_one(BookModel, book_id, 'authors')
         if result is None:
             return None
         result.is_deleted = True

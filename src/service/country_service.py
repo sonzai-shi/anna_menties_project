@@ -3,11 +3,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.models.capitals import CapitalModel
 from src.models.countries import CountryModel
 from src.schemas.country import CountrySchemaCreate, CountrySchemaResponse, CountrySchemaUpdate, CountrySchemaPagination
-from src.repositories.country_repository import CountryRepository
+from src.repositories.repository import Repository
 
 class CountryService:
     def __init__(self, session: AsyncSession):
-        self.country_repo = CountryRepository(session)
+        self.country_repo = Repository(session)
 
 
     async def create_country(self, country_data: CountrySchemaCreate):
@@ -28,14 +28,14 @@ class CountryService:
 
 
     async def read_country(self, country_id: UUID):
-        result = await self.country_repo.find_country(country_id)
+        result = await self.country_repo.find_one(CountryModel, country_id, 'capital')
         if result is None:
             return None
         return CountrySchemaResponse.model_validate(result)
 
 
     async def read_countries(self, offset: int, limit: int):
-        result = await self.country_repo.find_countries(offset, limit)
+        result = await self.country_repo.find_many(CountryModel,'capital', offset, limit)
         if result is None:
             return None
         return CountrySchemaPagination(
@@ -46,7 +46,7 @@ class CountryService:
 
 
     async def update_country(self, country_id: UUID, data: CountrySchemaUpdate):
-        country = await self.country_repo.find_country(country_id)
+        country = await self.country_repo.find_one(CountryModel, country_id, 'capital')
         if country is None:
             return None
 
@@ -71,7 +71,7 @@ class CountryService:
 
 
     async def delete_country(self, country_id: UUID):
-        result = await self.country_repo.find_country(country_id)
+        result = await self.country_repo.find_one(CountryModel, country_id, 'capital')
         if result is None:
             return None
         result.is_deleted = True
