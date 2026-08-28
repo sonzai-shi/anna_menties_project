@@ -9,14 +9,14 @@ router = APIRouter(prefix='/course')
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-async def post_course(data: CourseSchemaCreate, session: AsyncSession = Depends(get_session)):
+async def create_course(data: CourseSchemaCreate, session: AsyncSession = Depends(get_session)):
     course_service = CourseService(session)
     result = await course_service.create_course(data)
     return {'result': result}
 
 
 @router.get("/{course_id}")
-async def get_course(course_id: UUID, session: AsyncSession = Depends(get_session)):
+async def read_course(course_id: UUID, session: AsyncSession = Depends(get_session)):
     course_service = CourseService(session)
     result = await course_service.read_course(course_id)
     if result is None:
@@ -28,7 +28,7 @@ async def get_course(course_id: UUID, session: AsyncSession = Depends(get_sessio
 
 
 @router.get("")
-async def get_courses(offset: int, limit: int, session: AsyncSession = Depends(get_session)):
+async def read_courses(offset: int, limit: int, session: AsyncSession = Depends(get_session)):
     course_service = CourseService(session)
     result = await course_service.read_courses(offset, limit)
     if result is None:
@@ -40,7 +40,7 @@ async def get_courses(offset: int, limit: int, session: AsyncSession = Depends(g
 
 
 @router.put("/{course_id}")
-async def put_course(course_id: UUID, data: CourseSchemaUpdate, session: AsyncSession = Depends(get_session)):
+async def update_course(course_id: UUID, data: CourseSchemaUpdate, session: AsyncSession = Depends(get_session)):
     course_service = CourseService(session)
     result = await course_service.update_course(course_id, data)
     if result is None:

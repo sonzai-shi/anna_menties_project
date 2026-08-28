@@ -9,13 +9,13 @@ from src.schemas.country import CountrySchemaCreate, CountrySchemaUpdate
 router = APIRouter(prefix="/country")
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-async def post_country(data: CountrySchemaCreate, session: AsyncSession = Depends(get_session)):
+async def create_country(data: CountrySchemaCreate, session: AsyncSession = Depends(get_session)):
     country_service = CountryService(session)
     result = await country_service.create_country(data)
     return {'result' : result}
 
 @router.get("/{id_country}")
-async def get_country(id_country: UUID, session: AsyncSession = Depends(get_session)):
+async def read_country(id_country: UUID, session: AsyncSession = Depends(get_session)):
     country_service = CountryService(session)
     result = await country_service.read_country(id_country)
     if result is None:
@@ -27,7 +27,7 @@ async def get_country(id_country: UUID, session: AsyncSession = Depends(get_sess
 
 
 @router.get("")
-async def get_countries(offset: int, limit: int, session: AsyncSession = Depends(get_session)):
+async def read_countries(offset: int, limit: int, session: AsyncSession = Depends(get_session)):
     country_service = CountryService(session)
     result = await country_service.read_countries(offset, limit)
     if result is None:
@@ -39,7 +39,7 @@ async def get_countries(offset: int, limit: int, session: AsyncSession = Depends
 
 
 @router.put("/{id_country}")
-async def put_country(id_country: UUID, data: CountrySchemaUpdate, session: AsyncSession = Depends(get_session)):
+async def update_country(id_country: UUID, data: CountrySchemaUpdate, session: AsyncSession = Depends(get_session)):
     country_service = CountryService(session)
     result = await country_service.update_country(id_country, data)
     if result is None:
@@ -50,7 +50,7 @@ async def put_country(id_country: UUID, data: CountrySchemaUpdate, session: Asyn
     return {'result' : result}
 
 @router.delete("/{id_country}", status_code=status.HTTP_204_NO_CONTENT)
-async def del_country(id_country: UUID, session: AsyncSession = Depends(get_session)):
+async def delete_country(id_country: UUID, session: AsyncSession = Depends(get_session)):
     country_service = CountryService(session)
     result = await country_service.delete_country(id_country)
     if result is None:
