@@ -12,7 +12,7 @@ router = APIRouter(prefix='/book')
 async def create_books(data: BookSchemaCreate, session: AsyncSession = Depends(get_session)):
     book_service = BookService(session)
     result = await book_service.create_books(data)
-    return {'result': result}
+    return result
 
 @router.get('/{book_id}')
 async def read_book(book_id: UUID, session: AsyncSession = Depends(get_session)):
@@ -23,7 +23,7 @@ async def read_book(book_id: UUID, session: AsyncSession = Depends(get_session))
             status_code=status.HTTP_404_NOT_FOUND,
             detail='Book not found'
         )
-    return {'result': result}
+    return result
 
 
 @router.get(path='')
@@ -35,7 +35,7 @@ async def read_books(offset: int, limit: int, session: AsyncSession = Depends(ge
             status_code=status.HTTP_404_NOT_FOUND,
             detail='Book not found'
         )
-    return {'result': result}
+    return result
 
 
 @router.put('/{book_id}')
@@ -47,7 +47,7 @@ async def update_book(book_id: UUID, data: BookSchemaUpdate, session: AsyncSessi
             status_code=status.HTTP_404_NOT_FOUND,
             detail='Book not found'
         )
-    return {'result': result}
+    return result
 
 @router.delete('/{book_id}', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_book(book_id: UUID, session: AsyncSession = Depends(get_session)):

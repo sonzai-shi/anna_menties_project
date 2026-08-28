@@ -12,7 +12,7 @@ router = APIRouter(prefix='/course')
 async def create_course(data: CourseSchemaCreate, session: AsyncSession = Depends(get_session)):
     course_service = CourseService(session)
     result = await course_service.create_course(data)
-    return {'result': result}
+    return result
 
 
 @router.get("/{course_id}")
@@ -24,7 +24,7 @@ async def read_course(course_id: UUID, session: AsyncSession = Depends(get_sessi
             status_code=status.HTTP_404_NOT_FOUND,
             detail='Course not found'
         )
-    return {'result': result}
+    return result
 
 
 @router.get("")
@@ -36,7 +36,7 @@ async def read_courses(offset: int, limit: int, session: AsyncSession = Depends(
             status_code=status.HTTP_404_NOT_FOUND,
             detail='Course not found'
         )
-    return {'result': result}
+    return result
 
 
 @router.put("/{course_id}")
@@ -48,7 +48,7 @@ async def update_course(course_id: UUID, data: CourseSchemaUpdate, session: Asyn
             status_code=status.HTTP_404_NOT_FOUND,
             detail='Course not found'
         )
-    return {'result': result}
+    return result
 
 
 @router.delete("/{course_id}", status_code=status.HTTP_204_NO_CONTENT)

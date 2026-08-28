@@ -12,7 +12,7 @@ router = APIRouter(prefix="/country")
 async def create_country(data: CountrySchemaCreate, session: AsyncSession = Depends(get_session)):
     country_service = CountryService(session)
     result = await country_service.create_country(data)
-    return {'result' : result}
+    return result
 
 @router.get("/{id_country}")
 async def read_country(id_country: UUID, session: AsyncSession = Depends(get_session)):
@@ -23,7 +23,7 @@ async def read_country(id_country: UUID, session: AsyncSession = Depends(get_ses
             status_code=status.HTTP_404_NOT_FOUND,
             detail='Country not found'
         )
-    return {'result' : result}
+    return result
 
 
 @router.get("")
@@ -35,7 +35,7 @@ async def read_countries(offset: int, limit: int, session: AsyncSession = Depend
             status_code=status.HTTP_404_NOT_FOUND,
             detail='Country not found'
         )
-    return {'result' : result}
+    return result
 
 
 @router.put("/{id_country}")
@@ -47,7 +47,7 @@ async def update_country(id_country: UUID, data: CountrySchemaUpdate, session: A
             status_code=status.HTTP_404_NOT_FOUND,
             detail='Country not found'
         )
-    return {'result' : result}
+    return result
 
 @router.delete("/{id_country}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_country(id_country: UUID, session: AsyncSession = Depends(get_session)):
