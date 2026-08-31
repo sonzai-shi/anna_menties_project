@@ -1,21 +1,6 @@
 from uuid import UUID
 from pydantic import BaseModel, Field, field_validator, ConfigDict
-
-
-def letter_only(v: str) -> str | None:
-    if v is None:
-        return v
-    if not v.replace(' ', '').isalpha():
-        raise ValueError('Используйте только буквы.')
-    return v
-
-def not_empty(v: str) -> str | None:
-    if v is None:
-        return v
-    if not v.replace(' ', ''):
-        raise ValueError('Строка не может быть пустой.')
-    return v
-
+import src.schemas.base as base
 
 class AuthorSchemaCreate(BaseModel):
     name: str = Field(min_length=2, max_length=50)
@@ -25,13 +10,13 @@ class AuthorSchemaCreate(BaseModel):
 
     @field_validator('name', 'location', 'citizenship')
     @classmethod
-    def check_letter_only(cls, v: str) -> str | None:
-        return letter_only(v)
+    def check_letter_only(cls, value: str) -> str | None:
+        return base.letter_only_str(value)
 
     @field_validator('name', 'location', 'citizenship')
     @classmethod
-    def check_not_empty(cls, v: str) -> str | None:
-        return not_empty(v)
+    def check_not_empty(cls, value: str) -> str | None:
+        return base.not_empty_str(value)
 
 
 class AuthorSchemaResponse(BaseModel):
@@ -53,10 +38,10 @@ class AuthorSchemaUpdate(BaseModel):
 
     @field_validator('name', 'location', 'citizenship')
     @classmethod
-    def check_letter_only(cls, v: str) -> str | None:
-        return letter_only(v)
+    def check_letter_only(cls, value: str) -> str | None:
+        return base.letter_only_str(value)
 
     @field_validator('name', 'location', 'citizenship')
     @classmethod
-    def check_not_empty(cls, v: str) -> str | None:
-        return not_empty(v)
+    def check_not_empty(cls, value: str) -> str | None:
+        return base.not_empty_str(value)

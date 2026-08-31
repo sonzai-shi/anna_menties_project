@@ -3,35 +3,7 @@ from typing import Annotated
 from uuid import UUID
 from pydantic import BaseModel, field_validator, Field, ConfigDict
 from src.schemas.author import AuthorSchemaCreate, AuthorSchemaResponse, AuthorSchemaUpdate
-
-
-def not_empty(v: list) -> list:
-    if not v:
-        raise ValueError(f'Список не должен быть пустым.')
-    return v
-
-
-def strings_not_empty(v):
-    if v is None:
-        return v
-    if isinstance(v, list):
-        if not v:
-            raise ValueError(f'Список не должен быть пустым.')
-        for i in v:
-            if not i.replace(' ', ''):
-                raise ValueError(f'Строка в списке не должна быть пустой.')
-    if isinstance(v, str):
-        if not v.replace(' ', ''):
-            raise ValueError(f'Строка не должна быть пустой.')
-    return v
-
-def letter_only(v: list[str]) -> list[str] | None:
-    if v is None:
-        return v
-    for genre in v:
-        if not genre.replace(' ', '').isalpha():
-            raise ValueError(f'Используйте только буквы.')
-    return v
+import src.schemas.base as base
 
 
 class BookSchemaCreate(BaseModel):
@@ -41,20 +13,20 @@ class BookSchemaCreate(BaseModel):
     date_written: date = Field(le=date.today())
     authors: list[AuthorSchemaCreate]
 
-    @field_validator('authors')
+    @field_validator('authors', 'genre')
     @classmethod
-    def check_not_empty(cls, v: list)-> list:
-        return not_empty(v)
+    def check_not_empty_list(cls, value: list)-> list | None:
+        return base.not_empty_list(value)
 
-    @field_validator('genre', 'description', 'title')
+    @field_validator( 'description', 'title')
     @classmethod
-    def check_strings_not_empty(cls, v):
-        return strings_not_empty(v)
+    def check__not_empty_str(cls, value: str)-> str | None:
+        return base.not_empty_str(value)
 
     @field_validator('genre')
     @classmethod
-    def check_letter_only(cls, v: list[str]) -> list[str] | None:
-        return letter_only(v)
+    def check_letter_only(cls, value: list[str]) -> list[str] | None:
+        return base.letter_only_list(value)
 
 
 class BookSchemaResponse(BaseModel):
@@ -75,15 +47,20 @@ class BookSchemaUpdate(BaseModel):
     date_written: date | None = Field(default=None, le=date.today())
     authors: list[AuthorSchemaUpdate] | None = Field(default=None)
 
-    @field_validator('genre', 'description', 'title')
+    @field_validator('authors', 'genre')
     @classmethod
-    def check_strings_not_empty(cls, v):
-        return strings_not_empty(v)
+    def check_not_empty_list(cls, value: list) -> list | None:
+        return base.not_empty_list(value)
+
+    @field_validator('description', 'title')
+    @classmethod
+    def check_not_empty_str(cls, value: str) -> str | None:
+        return base.not_empty_str(value)
 
     @field_validator('genre')
     @classmethod
-    def check_letter_only(cls, v: list[str]) -> list[str] | None:
-        return letter_only(v)
+    def check_letter_only(cls, value: list[str]) -> list[str] | None:
+        return base.letter_only_list(value)
 
 
 class BookSchemaPagination(BaseModel):

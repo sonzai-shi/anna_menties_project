@@ -1,21 +1,7 @@
 from uuid import UUID
-
+import src.schemas.base as base
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 
-
-def not_empty(v: str) -> str | None:
-    if v is None:
-        return v
-    if not v.replace(' ', ''):
-        raise ValueError('Строка не может быть пустой.')
-    return v
-
-def letter_only(v: str) -> str | None:
-    if v is None:
-        return v
-    if not v.replace(' ', '').isalpha():
-        raise ValueError('Используйте только буквы.')
-    return v
 
 class StudentSchemaCreate(BaseModel):
     name: str = Field(min_length=2, max_length=50)
@@ -25,13 +11,13 @@ class StudentSchemaCreate(BaseModel):
 
     @field_validator('name', 'dormitory', 'citizenship')
     @classmethod
-    def check_not_empty(cls, v: str) -> str | None:
-        return not_empty(v)
+    def check_not_empty(cls, value: str) -> str | None:
+        return base.not_empty_str(value)
 
     @field_validator('name',  'citizenship')
     @classmethod
-    def check_letter_only(cls, v: str) -> str | None:
-        return letter_only(v)
+    def check_letter_only(cls, value: str) -> str | None:
+        return base.letter_only_str(value)
 
 
 class StudentSchemaResponse(BaseModel):
@@ -53,10 +39,10 @@ class StudentSchemaUpdate(BaseModel):
 
     @field_validator('name', 'dormitory', 'citizenship')
     @classmethod
-    def check_not_empty(cls, v: str) -> str | None:
-        return not_empty(v)
+    def check_not_empty(cls, value: str) -> str | None:
+        return base.not_empty_str(value)
 
     @field_validator('name',  'citizenship')
     @classmethod
-    def check_letter_only(cls, v: str) -> str | None:
-        return letter_only(v)
+    def check_letter_only(cls, value: str) -> str | None:
+        return base.letter_only_str(value)

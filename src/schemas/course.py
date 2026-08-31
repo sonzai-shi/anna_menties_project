@@ -1,28 +1,7 @@
 from uuid import UUID
-
+import src.schemas.base as base
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 from src.schemas.student import StudentSchemaCreate, StudentSchemaResponse, StudentSchemaUpdate
-
-
-def not_empty(v: list) -> list:
-    if not v:
-        raise ValueError(f'Список не должен быть пустым.')
-    return v
-
-
-def strings_not_empty(v: str) -> str | None:
-    if v is None:
-        return v
-    if not v.replace(' ', ''):
-        raise ValueError('Строка не может быть пустой.')
-    return v
-
-def letter_only(v: str) -> str | None:
-    if v is None:
-        return v
-    if not v.replace(' ', '').isalpha():
-        raise ValueError('Используйте только буквы.')
-    return v
 
 
 class CourseSchemaCreate(BaseModel):
@@ -34,18 +13,18 @@ class CourseSchemaCreate(BaseModel):
 
     @field_validator('students')
     @classmethod
-    def check_not_empty(cls, v: list) -> list:
-        return not_empty(v)
+    def check_not_empty(cls, value: list) -> list | None:
+        return base.not_empty_list(value)
 
     @field_validator('title', 'description', 'mentor')
     @classmethod
-    def check_strings_not_empty(cls, v: str) -> str | None:
-        return strings_not_empty(v)
+    def check_strings_not_empty(cls, value: str) -> str | None:
+        return base.not_empty_str(value)
 
     @field_validator('title', 'mentor')
     @classmethod
-    def check_letter_only(cls, v: str) -> str | None:
-        return letter_only(v)
+    def check_letter_only(cls, value: str) -> str | None:
+        return base.letter_only_str(value)
 
 
 class CourseSchemaResponse(BaseModel):
@@ -68,13 +47,13 @@ class CourseSchemaUpdate(BaseModel):
 
     @field_validator('title', 'description', 'mentor')
     @classmethod
-    def check_strings_not_empty(cls, v: str) -> str | None:
-        return strings_not_empty(v)
+    def check_strings_not_empty(cls, value: str) -> str | None:
+        return base.not_empty_str(value)
 
     @field_validator('title', 'mentor')
     @classmethod
-    def check_letter_only(cls, v: str) -> str | None:
-        return letter_only(v)
+    def check_letter_only(cls, value: str) -> str | None:
+        return base.letter_only_str(value)
 
 
 class CourseSchemaPagination(BaseModel):
