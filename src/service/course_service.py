@@ -29,7 +29,7 @@ class CourseService:
 
     async def read_courses(self, offset: int, limit: int):
         result = await self.course_repo.find_many(CourseModel, 'students', offset, limit)
-        return course_mapper.to_pagination(course=result, offset=offset, limit=limit)
+        return course_mapper.to_pagination(courses=result, offset=offset, limit=limit)
 
 
     async def update_course(self, course_id: UUID, data: CourseSchemaUpdate):

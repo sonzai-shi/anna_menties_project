@@ -2,7 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.service.country_service import CountryService
-from src.db import get_session
+from src.db import get_session, get_read_session
 from src.schemas.country import CountrySchemaCreate, CountrySchemaUpdate
 
 router = APIRouter(prefix="/country")
@@ -16,14 +16,14 @@ async def create_country(data: CountrySchemaCreate, session: AsyncSession = Depe
 
 
 @router.get("/{id_country}")
-async def read_country(id_country: UUID, session: AsyncSession = Depends(get_session)):
+async def read_country(id_country: UUID, session: AsyncSession = Depends(get_read_session)):
     country_service = CountryService(session)
     result = await country_service.read_country(id_country)
     return result
 
 
 @router.get("")
-async def read_countries(offset: int, limit: int, session: AsyncSession = Depends(get_session)):
+async def read_countries(offset: int, limit: int, session: AsyncSession = Depends(get_read_session)):
     country_service = CountryService(session)
     result = await country_service.read_countries(offset, limit)
     return result

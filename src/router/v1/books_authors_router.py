@@ -1,28 +1,30 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends
-from src.db import get_session
+from src.db import get_session, get_read_session
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from src.schemas.book import BookSchemaCreate, BookSchemaUpdate
 from src.service.book_service import BookService
 
 router = APIRouter(prefix='/book')
 
 @router.post(path='', status_code=status.HTTP_201_CREATED)
-async def create_books(data: BookSchemaCreate, session: AsyncSession = Depends(get_session)):
+async def create_books(
+        data: BookSchemaCreate,
+        session: AsyncSession = Depends(get_session)
+):
     book_service = BookService(session)
     result = await book_service.create_books(data)
     return result
 
 @router.get('/{book_id}')
-async def read_book(book_id: UUID, session: AsyncSession = Depends(get_session)):
+async def read_book(book_id: UUID, session: AsyncSession = Depends(get_read_session)):
     book_service = BookService(session)
     result = await book_service.read_book(book_id)
     return result
 
 
 @router.get(path='')
-async def read_books(offset: int, limit: int, session: AsyncSession = Depends(get_session)):
+async def read_books(offset: int, limit: int, session: AsyncSession = Depends(get_read_session)):
     book_service = BookService(session)
     result = await book_service.read_books(offset, limit)
     return result

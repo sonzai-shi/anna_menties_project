@@ -1,7 +1,7 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.db import get_session
+from src.db import get_session, get_read_session
 from src.schemas.course import CourseSchemaCreate, CourseSchemaUpdate
 from src.service.course_service import CourseService
 
@@ -16,14 +16,14 @@ async def create_course(data: CourseSchemaCreate, session: AsyncSession = Depend
 
 
 @router.get("/{course_id}")
-async def read_course(course_id: UUID, session: AsyncSession = Depends(get_session)):
+async def read_course(course_id: UUID, session: AsyncSession = Depends(get_read_session)):
     course_service = CourseService(session)
     result = await course_service.read_course(course_id)
     return result
 
 
 @router.get("")
-async def read_courses(offset: int, limit: int, session: AsyncSession = Depends(get_session)):
+async def read_courses(offset: int, limit: int, session: AsyncSession = Depends(get_read_session)):
     course_service = CourseService(session)
     result = await course_service.read_courses(offset, limit)
     return result
