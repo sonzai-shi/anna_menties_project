@@ -42,14 +42,13 @@ def update_book(book: BookModel, data: BookSchemaUpdate):
     authors_data = update_data.pop('authors', None)
 
     for field, value in update_data.items():
-            setattr(book, field, value)
+        setattr(book, field, value)
 
     if authors_data is not None:
         authors_id = {author.id: author for author in book.authors}
 
         for author_data in authors_data:
             author = authors_id.get(author_data['id'])
-            if author is not None:
-                for field, value in author_data.items():
-                    if field != 'id':
-                        setattr(author, field, value)
+            for field, value in author_data.items():
+                if field != 'id':
+                    setattr(author, field, value)

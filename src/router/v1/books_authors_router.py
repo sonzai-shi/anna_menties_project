@@ -13,31 +13,29 @@ async def create_books(
         session: AsyncSession = Depends(get_session)
 ):
     book_service = BookService(session)
-    result = await book_service.create_books(data)
-    return result
+    return await book_service.create_books(data)
+
 
 @router.get('/{book_id}')
 async def read_book(book_id: UUID, session: AsyncSession = Depends(get_read_session)):
     book_service = BookService(session)
-    result = await book_service.read_book(book_id)
-    return result
+    return await book_service.read_book(book_id)
 
 
 @router.get(path='')
 async def read_books(offset: int, limit: int, session: AsyncSession = Depends(get_read_session)):
     book_service = BookService(session)
-    result = await book_service.read_books(offset, limit)
-    return result
+    return await book_service.read_books(offset, limit)
 
 
 @router.put('/{book_id}')
 async def update_book(book_id: UUID, data: BookSchemaUpdate, session: AsyncSession = Depends(get_session)):
     book_service = BookService(session)
-    result = await book_service.update_book(book_id, data)
-    return result
+    return await book_service.update_book(book_id, data)
+
 
 @router.delete('/{book_id}', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_book(book_id: UUID, session: AsyncSession = Depends(get_session)):
     book_service = BookService(session)
-    result = await book_service.delete_book(book_id)
+    await book_service.delete_book(book_id)
     return None

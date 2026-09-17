@@ -46,7 +46,6 @@ def update_course(course: CourseModel, data: CourseSchemaUpdate ) -> None:
 
         for student_data in students_data:
             student = students_id.get(student_data['id'])
-            if student is not None:
-                for field, value in student_data.items():
-                    if field != 'id':
-                        setattr(student, field, value)
+            for field, value in student_data.items():
+                if field != 'id':
+                    setattr(student, field, value)

@@ -11,33 +11,29 @@ router = APIRouter(prefix='/course')
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_course(data: CourseSchemaCreate, session: AsyncSession = Depends(get_session)):
     course_service = CourseService(session)
-    result = await course_service.create_course(data)
-    return result
+    return await course_service.create_course(data)
 
 
 @router.get("/{course_id}")
 async def read_course(course_id: UUID, session: AsyncSession = Depends(get_read_session)):
     course_service = CourseService(session)
-    result = await course_service.read_course(course_id)
-    return result
+    return await course_service.read_course(course_id)
 
 
 @router.get("")
 async def read_courses(offset: int, limit: int, session: AsyncSession = Depends(get_read_session)):
     course_service = CourseService(session)
-    result = await course_service.read_courses(offset, limit)
-    return result
+    return await course_service.read_courses(offset, limit)
 
 
 @router.put("/{course_id}")
 async def update_course(course_id: UUID, data: CourseSchemaUpdate, session: AsyncSession = Depends(get_session)):
     course_service = CourseService(session)
-    result = await course_service.update_course(course_id, data)
-    return result
+    return await course_service.update_course(course_id, data)
 
 
 @router.delete("/{course_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_course(course_id: UUID, session: AsyncSession = Depends(get_session)):
     course_service = CourseService(session)
-    result = await course_service.delete_course(course_id)
+    await course_service.delete_course(course_id)
     return None
