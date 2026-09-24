@@ -31,7 +31,7 @@ class BookService:
 
     async def update_book(self, book_id: UUID, book_data: BookSchemaUpdate):
         book = await self.find_book(book_id)
-        book_mapper.update_book(book, book_data)
+        await self.book_repo.update_one(BookModel, book_id, 'authors', book_data)
         return BookSchemaResponse.model_validate(book)
 
     async def delete_book(self, book_id: UUID):

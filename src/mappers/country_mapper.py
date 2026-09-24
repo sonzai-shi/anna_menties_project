@@ -1,9 +1,8 @@
 from src.models.capitals import CapitalModel
 from src.models.countries import CountryModel
-from src.schemas.country import(
+from src.schemas.country import (
     CountrySchemaCreate,
     CountrySchemaResponse,
-    CountrySchemaUpdate,
     CountrySchemaPagination
 )
 
@@ -30,15 +29,3 @@ def to_pagination(countries: list[CountryModel], offset, limit) -> CountrySchema
         offset=offset,
         limit=limit,
     )
-
-
-def update_country(country: CountryModel, data: CountrySchemaUpdate) -> None:
-    update_data = data.model_dump(exclude_unset=True)
-    capital_data = update_data.pop('capital', None)
-
-    for field, value in update_data.items():
-        setattr(country, field, value)
-
-    if capital_data is not None:
-        for field, value in capital_data.items():
-            setattr(country.capital, field, value)

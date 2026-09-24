@@ -29,6 +29,7 @@ class CapitalSchemaResponse(BaseModel):
 
 
 class CapitalSchemaUpdate(BaseModel):
+    id: UUID
     name: str | None = Field(default=None, min_length=1, max_length=50)
     mayor: str | None = Field(default=None, min_length=1, max_length=100)
     population: int | None = Field(default=None, ge=0)

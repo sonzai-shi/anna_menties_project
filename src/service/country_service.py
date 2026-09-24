@@ -31,7 +31,7 @@ class CountryService:
 
     async def update_country(self, country_id: UUID, data: CountrySchemaUpdate):
         country = await self.find_country(country_id)
-        country_mapper.update_country(country, data)
+        await self.country_repo.update_one(CountryModel, country_id, 'capital', data)
         return CountrySchemaResponse.model_validate(country)
 
     async def delete_country(self, country_id: UUID):

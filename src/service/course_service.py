@@ -31,7 +31,7 @@ class CourseService:
 
     async def update_course(self, course_id: UUID, data: CourseSchemaUpdate):
         course = await self.find_course(course_id)
-        course_mapper.update_course(course, data)
+        await self.course_repo.update_one(CourseModel, course_id, 'students', data)
         return CourseSchemaResponse.model_validate(course)
 
     async def delete_course(self, course_id: UUID):
