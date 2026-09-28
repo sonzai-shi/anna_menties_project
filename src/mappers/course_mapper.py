@@ -26,7 +26,7 @@ def to_model(course_data: CourseSchemaCreate) -> CourseModel:
     return course
 
 
-def to_pagination(courses: list[CourseModel], offset, limit) -> CourseSchemaPagination:
+def to_pagination(courses: list[CourseModel], offset: int, limit: int) -> CourseSchemaPagination:
     return CourseSchemaPagination(
         items=[CourseSchemaResponse.model_validate(course) for course in courses],
         offset=offset,

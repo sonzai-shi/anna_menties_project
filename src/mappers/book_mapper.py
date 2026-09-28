@@ -28,7 +28,7 @@ def to_model(data: BookSchemaCreate) -> BookModel:
     return book
 
 
-def to_paginated(books: list[BookModel], offset, limit) -> BookSchemaPagination:
+def to_paginated(books: list[BookModel], offset: int, limit: int) -> BookSchemaPagination:
     return BookSchemaPagination(
         items=[BookSchemaResponse.model_validate(book) for book in books],
         offset=offset,

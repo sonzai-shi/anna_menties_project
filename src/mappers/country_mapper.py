@@ -23,7 +23,7 @@ def to_model(country_data: CountrySchemaCreate) -> CountryModel:
     return country
 
 
-def to_pagination(countries: list[CountryModel], offset, limit) -> CountrySchemaPagination:
+def to_pagination(countries: list[CountryModel], offset: int, limit: int) -> CountrySchemaPagination:
     return CountrySchemaPagination(
         items=[CountrySchemaResponse.model_validate(country) for country in countries],
         offset=offset,

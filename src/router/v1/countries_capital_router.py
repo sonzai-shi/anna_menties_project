@@ -1,7 +1,12 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from src.service.country_service import CountryService
-from src.schemas.country import CountrySchemaCreate, CountrySchemaUpdate
+from src.schemas.country import (
+    CountrySchemaCreate,
+    CountrySchemaUpdate,
+    CountrySchemaResponse,
+    CountrySchemaPagination
+)
 from src.dependencies.country import get_country_write_service, get_country_read_service
 
 router = APIRouter(prefix="/country")
@@ -11,7 +16,7 @@ router = APIRouter(prefix="/country")
 async def create_country(
         data: CountrySchemaCreate,
         country_service: CountryService = Depends(get_country_write_service),
-):
+) -> CountrySchemaResponse:
     return await country_service.create_country(data)
 
 
@@ -19,7 +24,7 @@ async def create_country(
 async def read_country(
         id_country: UUID,
         country_service: CountryService = Depends(get_country_read_service),
-):
+) -> CountrySchemaResponse:
     return await country_service.read_country(id_country)
 
 
@@ -28,7 +33,7 @@ async def read_countries(
         offset: int,
         limit: int,
         country_service: CountryService = Depends(get_country_read_service),
-):
+) -> CountrySchemaPagination:
     return await country_service.read_countries(offset, limit)
 
 
@@ -37,7 +42,7 @@ async def update_country(
         id_country: UUID,
         data: CountrySchemaUpdate,
         country_service: CountryService = Depends(get_country_write_service),
-):
+) -> CountrySchemaResponse:
     return await country_service.update_country(id_country, data)
 
 
@@ -45,6 +50,6 @@ async def update_country(
 async def delete_country(
         id_country: UUID,
         country_service: CountryService = Depends(get_country_write_service),
-):
+) -> None:
     await country_service.delete_country(id_country)
     return None

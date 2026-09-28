@@ -3,18 +3,26 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy import update
+from src.models.base import Base
+from typing import TypeVar
+from pydantic import BaseModel
+from collections.abc import Sequence
+
+ModelT = TypeVar("ModelT", bound=Base)
+SchemaT = TypeVar("SchemaT", bound=BaseModel)
 
 
 class Repository:
+
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create(self, model):
+    async def create(self, model: ModelT) -> ModelT:
         self.session.add(model)
         await self.session.flush()
         return model
 
-    async def find_one(self, model, id_model: UUID, join_orm):
+    async def find_one(self, model: type[ModelT], id_model: UUID, join_orm: str) -> ModelT | None:
         query = (
             select(model)
             .where(model.id == id_model)
@@ -24,7 +32,7 @@ class Repository:
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def find_many(self, model, join_orm, offset: int, limit: int):
+    async def find_many(self, model: type[ModelT], join_orm: str, offset: int, limit: int) -> Sequence[ModelT]:
         query = (
             select(model)
             .where(model.is_deleted == False)
@@ -35,7 +43,7 @@ class Repository:
         result = await self.session.execute(query)
         return result.scalars().all()
 
-    async def update_one(self, model, id_model, join_orm, data):
+    async def update_one(self, model: type[ModelT], id_model: UUID, join_orm: str, data: SchemaT):
         update_data = data.model_dump(exclude_unset=True)
         join_orm_data = update_data.pop(join_orm, None)
 

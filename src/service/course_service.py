@@ -7,6 +7,7 @@ from src.schemas.course import (
     CourseSchemaCreate,
     CourseSchemaResponse,
     CourseSchemaUpdate,
+    CourseSchemaPagination,
 )
 from src.repositories.repository import Repository
 from src.exceptions.service_exception import ObjectNotFoundException
@@ -16,32 +17,32 @@ class CourseService:
     def __init__(self, session: AsyncSession):
         self.course_repo = Repository(session)
 
-    async def create_course(self, course_data: CourseSchemaCreate):
+    async def create_course(self, course_data: CourseSchemaCreate) -> CourseSchemaResponse:
         course = course_mapper.to_model(course_data)
         result = await self.course_repo.create(course)
         return CourseSchemaResponse.model_validate(result)
 
-    async def read_course(self, course_id: UUID):
+    async def read_course(self, course_id: UUID) -> CourseSchemaResponse:
         result = await self.find_course(course_id)
         return CourseSchemaResponse.model_validate(result)
 
-    async def read_courses(self, offset: int, limit: int):
+    async def read_courses(self, offset: int, limit: int) -> CourseSchemaPagination:
         result = await self.course_repo.find_many(CourseModel, 'students', offset, limit)
-        return course_mapper.to_pagination(courses=result, offset=offset, limit=limit)
+        return course_mapper.to_pagination(courses=list(result), offset=offset, limit=limit)
 
-    async def update_course(self, course_id: UUID, data: CourseSchemaUpdate):
+    async def update_course(self, course_id: UUID, data: CourseSchemaUpdate) -> CourseSchemaResponse:
         course = await self.find_course(course_id)
         await self.course_repo.update_one(CourseModel, course_id, 'students', data)
         return CourseSchemaResponse.model_validate(course)
 
-    async def delete_course(self, course_id: UUID):
+    async def delete_course(self, course_id: UUID) -> str:
         result = await self.find_course(course_id)
         result.is_deleted = True
         for student in result.students:
             student.is_deleted = True
         return f'Course with ID: {course_id} has been removed.'
 
-    async def find_course(self, course_id: UUID):
+    async def find_course(self, course_id: UUID) -> CourseModel:
         result = await self.course_repo.find_one(CourseModel, course_id, 'students')
         if result is None:
             raise ObjectNotFoundException(

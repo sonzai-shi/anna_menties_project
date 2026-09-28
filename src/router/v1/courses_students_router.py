@@ -1,6 +1,11 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends
-from src.schemas.course import CourseSchemaCreate, CourseSchemaUpdate
+from src.schemas.course import (
+    CourseSchemaCreate,
+    CourseSchemaUpdate,
+    CourseSchemaResponse,
+    CourseSchemaPagination,
+)
 from src.service.course_service import CourseService
 from src.dependencies.course import get_course_read_service, get_course_write_service
 
@@ -11,7 +16,7 @@ router = APIRouter(prefix='/course')
 async def create_course(
         data: CourseSchemaCreate,
         course_service: CourseService = Depends(get_course_write_service),
-):
+) -> CourseSchemaResponse:
     return await course_service.create_course(data)
 
 
@@ -19,7 +24,7 @@ async def create_course(
 async def read_course(
         course_id: UUID,
         course_service: CourseService = Depends(get_course_read_service),
-):
+) -> CourseSchemaResponse:
     return await course_service.read_course(course_id)
 
 
@@ -28,7 +33,7 @@ async def read_courses(
         offset: int,
         limit: int,
         course_service: CourseService = Depends(get_course_read_service),
-):
+) -> CourseSchemaPagination:
     return await course_service.read_courses(offset, limit)
 
 
@@ -37,7 +42,7 @@ async def update_course(
         course_id: UUID,
         data: CourseSchemaUpdate,
         course_service: CourseService = Depends(get_course_write_service),
-):
+) -> CourseSchemaResponse:
     return await course_service.update_course(course_id, data)
 
 
@@ -45,6 +50,6 @@ async def update_course(
 async def delete_course(
         course_id: UUID,
         course_service: CourseService = Depends(get_course_write_service),
-):
+) -> None:
     await course_service.delete_course(course_id)
     return None
