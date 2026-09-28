@@ -9,8 +9,9 @@ from src.schemas.course import (
     CourseSchemaUpdate,
     CourseSchemaPagination,
 )
+from datetime import datetime
 from src.repositories.repository import Repository
-from src.exceptions.service_exception import ObjectNotFoundException
+from src.exceptions.service_exception import ObjectNotFoundException, CursorException
 
 
 class CourseService:
@@ -26,9 +27,36 @@ class CourseService:
         result = await self.find_course(course_id)
         return CourseSchemaResponse.model_validate(result)
 
-    async def read_courses(self, offset: int, limit: int) -> CourseSchemaPagination:
-        result = await self.course_repo.find_many(CourseModel, 'students', offset, limit)
-        return course_mapper.to_pagination(courses=list(result), offset=offset, limit=limit)
+    async def read_courses(
+            self,
+            limit: int,
+            cursor_created_at: datetime | None,
+            cursor_id: UUID | None,
+    ) -> CourseSchemaPagination:
+        if (cursor_created_at is None) != (cursor_id is None):
+            raise CursorException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f'You must provide both cursor_created_at and cursor_id.'
+            )
+        result = await self.course_repo.find_many(
+            model=CourseModel,
+            join_orm='students',
+            limit=limit,
+            cursor_created_at=cursor_created_at,
+            cursor_id=cursor_id,
+        )
+        next_cursor_created_at = None
+        next_cursor_id = None
+        if result:
+            last_course = result[-1]
+            next_cursor_created_at = last_course.created_at
+            next_cursor_id = last_course.id
+        return course_mapper.to_pagination(
+            courses=list(result),
+            limit=limit,
+            next_cursor_created_at=next_cursor_created_at,
+            next_cursor_id=next_cursor_id,
+        )
 
     async def update_course(self, course_id: UUID, data: CourseSchemaUpdate) -> CourseSchemaResponse:
         course = await self.find_course(course_id)

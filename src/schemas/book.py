@@ -4,6 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, field_validator, Field, ConfigDict
 from src.schemas.author import AuthorSchemaCreate, AuthorSchemaResponse, AuthorSchemaUpdate
 import src.schemas.base as base
+from datetime import datetime
 
 
 class BookSchemaCreate(BaseModel):
@@ -15,12 +16,12 @@ class BookSchemaCreate(BaseModel):
 
     @field_validator('authors', 'genre')
     @classmethod
-    def check_not_empty_list(cls, value: list)-> list | None:
+    def check_not_empty_list(cls, value: list) -> list | None:
         return base.not_empty_list(value)
 
-    @field_validator( 'description', 'title')
+    @field_validator('description', 'title')
     @classmethod
-    def check__not_empty_str(cls, value: str)-> str | None:
+    def check__not_empty_str(cls, value: str) -> str | None:
         return base.not_empty_str(value)
 
     @field_validator('genre')
@@ -65,5 +66,6 @@ class BookSchemaUpdate(BaseModel):
 
 class BookSchemaPagination(BaseModel):
     items: list[BookSchemaResponse]
-    offset: int
     limit: int
+    next_cursor_created_at: datetime | None = None
+    next_cursor_id: UUID | None = None

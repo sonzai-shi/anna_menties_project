@@ -5,6 +5,8 @@ from src.schemas.book import (
     BookSchemaPagination,
     BookSchemaResponse
 )
+from datetime import datetime
+from uuid import UUID
 
 
 def to_model(data: BookSchemaCreate) -> BookModel:
@@ -28,9 +30,15 @@ def to_model(data: BookSchemaCreate) -> BookModel:
     return book
 
 
-def to_paginated(books: list[BookModel], offset: int, limit: int) -> BookSchemaPagination:
+def to_paginated(
+        books: list[BookModel],
+        limit: int,
+        next_cursor_created_at: datetime | None,
+        next_cursor_id: UUID | None,
+) -> BookSchemaPagination:
     return BookSchemaPagination(
         items=[BookSchemaResponse.model_validate(book) for book in books],
-        offset=offset,
         limit=limit,
+        next_cursor_created_at=next_cursor_created_at,
+        next_cursor_id=next_cursor_id
     )

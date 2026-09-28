@@ -5,6 +5,8 @@ from src.schemas.course import (
     CourseSchemaResponse,
     CourseSchemaPagination
 )
+from datetime import datetime
+from uuid import UUID
 
 
 def to_model(course_data: CourseSchemaCreate) -> CourseModel:
@@ -26,9 +28,15 @@ def to_model(course_data: CourseSchemaCreate) -> CourseModel:
     return course
 
 
-def to_pagination(courses: list[CourseModel], offset: int, limit: int) -> CourseSchemaPagination:
+def to_pagination(
+        courses: list[CourseModel],
+        limit: int,
+        next_cursor_created_at: datetime | None,
+        next_cursor_id: UUID | None,
+) -> CourseSchemaPagination:
     return CourseSchemaPagination(
         items=[CourseSchemaResponse.model_validate(course) for course in courses],
-        offset=offset,
         limit=limit,
+        next_cursor_created_at=next_cursor_created_at,
+        next_cursor_id=next_cursor_id,
     )

@@ -7,6 +7,7 @@ from src.schemas.country import (
     CountrySchemaResponse,
     CountrySchemaPagination
 )
+from datetime import datetime
 from src.dependencies.country import get_country_write_service, get_country_read_service
 
 router = APIRouter(prefix="/country")
@@ -30,11 +31,12 @@ async def read_country(
 
 @router.get("")
 async def read_countries(
-        offset: int,
         limit: int,
+        cursor_created_at: datetime | None = None,
+        cursor_id: UUID | None = None,
         country_service: CountryService = Depends(get_country_read_service),
 ) -> CountrySchemaPagination:
-    return await country_service.read_countries(offset, limit)
+    return await country_service.read_countries(limit, cursor_created_at, cursor_id)
 
 
 @router.put("/{id_country}")

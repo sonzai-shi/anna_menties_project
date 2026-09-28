@@ -2,13 +2,14 @@ from uuid import UUID
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 from src.schemas.capital import CapitalSchemaResponse, CapitalSchemaCreate, CapitalSchemaUpdate
 import src.schemas.base as base
+from datetime import datetime
 
 
 class CountrySchemaCreate(BaseModel):
     name: str = Field(min_length=1, max_length=50)
     capital: CapitalSchemaCreate
     president: str = Field(min_length=1, max_length=100)
-    population: int = Field(ge= 0)
+    population: int = Field(ge=0)
     currency: str | None = Field(default=None, min_length=1, max_length=100)
 
     @field_validator('name', 'president', 'currency')
@@ -53,5 +54,6 @@ class CountrySchemaUpdate(BaseModel):
 
 class CountrySchemaPagination(BaseModel):
     items: list[CountrySchemaResponse]
-    offset: int
     limit: int
+    next_cursor_created_at: datetime | None = None
+    next_cursor_id: UUID | None = None

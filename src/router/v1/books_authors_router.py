@@ -6,6 +6,7 @@ from src.schemas.book import (
     BookSchemaResponse,
     BookSchemaPagination,
 )
+from datetime import datetime
 from src.service.book_service import BookService
 from src.dependencies.book import get_book_read_service, get_book_write_service
 
@@ -30,11 +31,12 @@ async def read_book(
 
 @router.get(path='')
 async def read_books(
-        offset: int,
         limit: int,
+        cursor_created_at: datetime | None = None,
+        cursor_id: UUID | None = None,
         book_service: BookService = Depends(get_book_read_service),
 ) -> BookSchemaPagination:
-    return await book_service.read_books(offset, limit)
+    return await book_service.read_books(limit, cursor_created_at, cursor_id)
 
 
 @router.put('/{book_id}')

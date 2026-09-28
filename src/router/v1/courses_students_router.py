@@ -6,6 +6,7 @@ from src.schemas.course import (
     CourseSchemaResponse,
     CourseSchemaPagination,
 )
+from datetime import datetime
 from src.service.course_service import CourseService
 from src.dependencies.course import get_course_read_service, get_course_write_service
 
@@ -30,11 +31,12 @@ async def read_course(
 
 @router.get("")
 async def read_courses(
-        offset: int,
         limit: int,
+        cursor_created_at: datetime | None = None,
+        cursor_id: UUID | None = None,
         course_service: CourseService = Depends(get_course_read_service),
 ) -> CourseSchemaPagination:
-    return await course_service.read_courses(offset, limit)
+    return await course_service.read_courses(limit, cursor_created_at, cursor_id)
 
 
 @router.put("/{course_id}")

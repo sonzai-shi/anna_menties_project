@@ -9,8 +9,9 @@ from src.schemas.book import (
     BookSchemaUpdate,
     BookSchemaPagination,
 )
+from datetime import datetime
 from src.repositories.repository import Repository
-from src.exceptions.service_exception import ObjectNotFoundException
+from src.exceptions.service_exception import ObjectNotFoundException, CursorException
 
 
 class BookService:
@@ -26,9 +27,34 @@ class BookService:
         result = await self.find_book(book_id)
         return BookSchemaResponse.model_validate(result)
 
-    async def read_books(self, offset: int, limit: int) -> BookSchemaPagination:
-        result = await self.book_repo.find_many(BookModel, 'authors', offset, limit)
-        return book_mapper.to_paginated(books=list(result), offset=offset, limit=limit)
+    async def read_books(self, limit: int, cursor_created_at: datetime | None,
+                         cursor_id: UUID | None) -> BookSchemaPagination:
+        if (cursor_created_at is None) != (cursor_id is None):
+            raise CursorException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f'You must provide both cursor_created_at and cursor_id.'
+            )
+        result = await self.book_repo.find_many(
+            model=BookModel,
+            join_orm='authors',
+            limit=limit,
+            cursor_created_at=cursor_created_at,
+            cursor_id=cursor_id,
+        )
+        next_cursor_created_at = None
+        next_cursor_id = None
+
+        if result:
+            last_book = result[-1]
+            next_cursor_created_at = last_book.created_at
+            next_cursor_id = last_book.id
+
+        return book_mapper.to_paginated(
+            books=result,
+            limit=limit,
+            next_cursor_created_at=next_cursor_created_at,
+            next_cursor_id=next_cursor_id,
+        )
 
     async def update_book(self, book_id: UUID, book_data: BookSchemaUpdate) -> BookSchemaResponse:
         book = await self.find_book(book_id)

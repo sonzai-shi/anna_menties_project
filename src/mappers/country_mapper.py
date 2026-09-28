@@ -5,6 +5,8 @@ from src.schemas.country import (
     CountrySchemaResponse,
     CountrySchemaPagination
 )
+from datetime import datetime
+from uuid import UUID
 
 
 def to_model(country_data: CountrySchemaCreate) -> CountryModel:
@@ -23,9 +25,15 @@ def to_model(country_data: CountrySchemaCreate) -> CountryModel:
     return country
 
 
-def to_pagination(countries: list[CountryModel], offset: int, limit: int) -> CountrySchemaPagination:
+def to_pagination(
+        countries: list[CountryModel],
+        limit: int,
+        next_cursor_created_at: datetime | None,
+        next_cursor_id: UUID | None,
+) -> CountrySchemaPagination:
     return CountrySchemaPagination(
         items=[CountrySchemaResponse.model_validate(country) for country in countries],
-        offset=offset,
         limit=limit,
+        next_cursor_created_at=next_cursor_created_at,
+        next_cursor_id=next_cursor_id,
     )

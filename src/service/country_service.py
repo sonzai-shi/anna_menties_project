@@ -9,8 +9,9 @@ from src.schemas.country import (
     CountrySchemaUpdate,
     CountrySchemaPagination,
 )
+from datetime import datetime
 from src.repositories.repository import Repository
-from src.exceptions.service_exception import ObjectNotFoundException
+from src.exceptions.service_exception import ObjectNotFoundException, CursorException
 
 
 class CountryService:
@@ -26,9 +27,37 @@ class CountryService:
         result = await self.find_country(country_id)
         return CountrySchemaResponse.model_validate(result)
 
-    async def read_countries(self, offset: int, limit: int) -> CountrySchemaPagination:
-        result = await self.country_repo.find_many(CountryModel, 'capital', offset, limit)
-        return country_mapper.to_pagination(countries=list(result), offset=offset, limit=limit)
+    async def read_countries(
+            self,
+            limit: int,
+            cursor_created_at: datetime | None,
+            cursor_id: UUID | None,
+    ) -> CountrySchemaPagination:
+        if (cursor_created_at is None) != (cursor_id is None):
+            raise CursorException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f'You must provide both cursor_created_at and cursor_id.'
+            )
+        result = await self.country_repo.find_many(
+            model=CountryModel,
+            join_orm='capital',
+            limit=limit,
+            cursor_created_at=cursor_created_at,
+            cursor_id=cursor_id,
+        )
+        next_cursor_created_at = None
+        next_cursor_id = None
+
+        if result:
+            last_country = result[-1]
+            next_cursor_created_at = last_country.created_at
+            next_cursor_id = last_country.id
+        return country_mapper.to_pagination(
+            countries=result,
+            limit=limit,
+            next_cursor_created_at=next_cursor_created_at,
+            next_cursor_id=next_cursor_id,
+        )
 
     async def update_country(self, country_id: UUID, data: CountrySchemaUpdate) -> CountrySchemaResponse:
         country = await self.find_country(country_id)

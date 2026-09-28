@@ -2,11 +2,12 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
-from sqlalchemy import update
+from sqlalchemy import update, tuple_
 from src.models.base import Base
 from typing import TypeVar
 from pydantic import BaseModel
 from collections.abc import Sequence
+from datetime import datetime
 
 ModelT = TypeVar("ModelT", bound=Base)
 SchemaT = TypeVar("SchemaT", bound=BaseModel)
@@ -32,16 +33,27 @@ class Repository:
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def find_many(self, model: type[ModelT], join_orm: str, offset: int, limit: int) -> Sequence[ModelT]:
+    async def find_many(
+            self,
+            model: type[ModelT],
+            join_orm: str,
+            limit: int,
+            cursor_created_at: datetime | None = None,
+            cursor_id: UUID | None = None,
+    ) -> list[ModelT]:
         query = (
             select(model)
             .where(model.is_deleted == False)
             .options(selectinload(getattr(model, join_orm)))
-            .offset(offset)
+            .order_by(model.created_at, model.id)
             .limit(limit)
         )
+        if cursor_created_at is not None and cursor_id is not None:
+            query = query.where(
+                tuple_(model.created_at, model.id)
+                > (cursor_created_at, cursor_id))
         result = await self.session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def update_one(self, model: type[ModelT], id_model: UUID, join_orm: str, data: SchemaT):
         update_data = data.model_dump(exclude_unset=True)

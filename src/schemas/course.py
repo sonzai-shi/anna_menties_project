@@ -2,6 +2,7 @@ from uuid import UUID
 import src.schemas.base as base
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 from src.schemas.student import StudentSchemaCreate, StudentSchemaResponse, StudentSchemaUpdate
+from datetime import datetime
 
 
 class CourseSchemaCreate(BaseModel):
@@ -58,5 +59,6 @@ class CourseSchemaUpdate(BaseModel):
 
 class CourseSchemaPagination(BaseModel):
     items: list[CourseSchemaResponse]
-    offset: int
     limit: int
+    next_cursor_created_at: datetime | None = None
+    next_cursor_id: UUID | None = None
