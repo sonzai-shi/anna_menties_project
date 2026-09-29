@@ -1,0 +1,90 @@
+from uuid import UUID
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
+from sqlalchemy import update, tuple_
+from src.models.base import Base
+from typing import TypeVar
+from pydantic import BaseModel
+from collections.abc import Sequence
+from datetime import datetime
+
+ModelT = TypeVar("ModelT", bound=Base)
+SchemaT = TypeVar("SchemaT", bound=BaseModel)
+
+
+class Repository:
+
+    def __init__(self, session: AsyncSession):
+        self.session = session
+
+    async def create(self, model: ModelT) -> ModelT:
+        self.session.add(model)
+        await self.session.flush()
+        return model
+
+    async def find_one(self, model: type[ModelT], id_model: UUID, join_orm: str) -> ModelT | None:
+        query = (
+            select(model)
+            .where(model.id == id_model)
+            .where(model.is_deleted == False)
+            .options(selectinload(getattr(model, join_orm)))
+        )
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
+    async def find_many(
+            self,
+            model: type[ModelT],
+            join_orm: str,
+            limit: int,
+            cursor_created_at: datetime | None = None,
+            cursor_id: UUID | None = None,
+    ) -> list[ModelT]:
+        query = (
+            select(model)
+            .where(model.is_deleted == False)
+            .options(selectinload(getattr(model, join_orm)))
+            .order_by(model.created_at, model.id)
+            .limit(limit)
+        )
+        if cursor_created_at is not None and cursor_id is not None:
+            query = query.where(
+                tuple_(model.created_at, model.id)
+                > (cursor_created_at, cursor_id))
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
+    async def update_one(self, model: type[ModelT], id_model: UUID, join_orm: str, data: SchemaT):
+        update_data = data.model_dump(exclude_unset=True)
+        join_orm_data = update_data.pop(join_orm, None)
+
+        if update_data:
+            query = (
+                update(model)
+                .where(model.id == id_model)
+                .values(**update_data)
+            )
+            await self.session.execute(query)
+
+        if join_orm_data is not None:
+            join_model = getattr(model, join_orm).property.mapper.class_
+
+            if isinstance(join_orm_data, dict):
+                join_id = join_orm_data["id"]
+                query = (
+                    update(join_model)
+                    .where(join_model.id == join_id)
+                    .values(**join_orm_data)
+                )
+                await self.session.execute(query)
+
+            else:
+                for nested_data in join_orm_data:
+                    join_id = nested_data["id"]
+                    query = (
+                        update(join_model)
+                        .where(join_model.id == join_id)
+                        .values(**nested_data)
+                    )
+                    await self.session.execute(query)

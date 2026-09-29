@@ -7,3 +7,12 @@ services:
       POSTGRES_PASSWORD: 123456
     ports:
       - "5432:5432"
+
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      postgres_url: postgresql+asyncpg://postgres:123456@postgres:5432/postgres
+    depends_on:
+      - postgres
