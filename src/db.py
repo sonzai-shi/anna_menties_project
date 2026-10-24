@@ -1,9 +1,5 @@
-from typing import Annotated
-
-from fastapi import HTTPException, status, Depends
 import abc
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
-
 from src.config import Settings
 
 settings = Settings()
@@ -18,6 +14,7 @@ SessionFactory = async_sessionmaker(
     class_=AsyncSession,
     expire_on_commit=False,
 )
+
 
 class AbstractSession(abc.ABC):
 

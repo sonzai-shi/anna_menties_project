@@ -6,7 +6,6 @@ from sqlalchemy import update, tuple_
 from src.models.base import Base
 from typing import TypeVar
 from pydantic import BaseModel
-from collections.abc import Sequence
 from datetime import datetime
 
 ModelT = TypeVar("ModelT", bound=Base)
