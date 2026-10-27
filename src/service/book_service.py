@@ -1,0 +1,76 @@
+from uuid import UUID
+from fastapi import status
+from sqlalchemy.ext.asyncio import AsyncSession
+from src.mappers import book_mapper
+from src.models.books import BookModel
+from src.schemas.book import (
+    BookSchemaCreate,
+    BookSchemaResponse,
+    BookSchemaUpdate,
+    BookSchemaPagination,
+)
+from datetime import datetime
+from src.repositories.repository import Repository
+from src.exceptions.service_exception import ObjectNotFoundException, CursorException
+
+
+class BookService:
+    def __init__(self, session: AsyncSession):
+        self.book_repo = Repository(session)
+
+    async def create_books(self, data: BookSchemaCreate) -> BookSchemaResponse:
+        book = book_mapper.to_model(data)
+        result = await self.book_repo.create(book)
+        return BookSchemaResponse.model_validate(result)
+
+    async def read_book(self, book_id: UUID) -> BookSchemaResponse:
+        result = await self.find_book(book_id)
+        return BookSchemaResponse.model_validate(result)
+
+    async def read_books(self, limit: int, cursor_created_at: datetime | None,
+                         cursor_id: UUID | None) -> BookSchemaPagination:
+        if (cursor_created_at is None) != (cursor_id is None):
+            raise CursorException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f'You must provide both cursor_created_at and cursor_id.'
+            )
+        result = await self.book_repo.find_many(
+            model=BookModel,
+            join_orm='authors',
+            limit=limit,
+            cursor_created_at=cursor_created_at,
+            cursor_id=cursor_id,
+        )
+        next_cursor_created_at = None
+        next_cursor_id = None
+
+        if result:
+            last_book = result[-1]
+            next_cursor_created_at = last_book.created_at
+            next_cursor_id = last_book.id
+
+        return book_mapper.to_paginated(
+            books=result,
+            limit=limit,
+            next_cursor_created_at=next_cursor_created_at,
+            next_cursor_id=next_cursor_id,
+        )
+
+    async def update_book(self, book_id: UUID, book_data: BookSchemaUpdate) -> BookSchemaResponse:
+        book = await self.find_book(book_id)
+        await self.book_repo.update_one(BookModel, book_id, 'authors', book_data)
+        return BookSchemaResponse.model_validate(book)
+
+    async def delete_book(self, book_id: UUID) -> str:
+        result = await self.find_book(book_id)
+        result.is_deleted = True
+        return f'Book with ID: {book_id} has been deleted.'
+
+    async def find_book(self, book_id: UUID) -> BookModel:
+        result = await self.book_repo.find_one(BookModel, book_id, 'authors')
+        if result is None:
+            raise ObjectNotFoundException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f'Book with ID: {book_id} not found.'
+            )
+        return result
