@@ -17,9 +17,7 @@ class RedisCache:
         return await self.cache.delete(f'{model_name}:{key}')
 
     async def sets(self, model_name: str, data: dict[UUID, str]) -> None:
-        for book_id, book in data.items():
-            await self.set(
-                model_name=model_name,
-                key=book_id,
-                value=book,
-            )
+        async with self.cache.pipeline() as pipe:
+            for key, value in data.items():
+                pipe.set(f'{model_name}:{key}', value, ex=settings.redis_cache_ttl)
+            await pipe.execute()
