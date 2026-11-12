@@ -12,9 +12,9 @@ from src.schemas.country import (
 from datetime import datetime
 from src.repositories.repository import Repository
 from src.exceptions.service_exception import ObjectNotFoundException, CursorException
-from src.cache.redis_cache import RedisCache
+from src.infrastructure.redis_cache import RedisCache
 from redis.asyncio import Redis
-from src.unit_of_work import UnitOfWork
+from src.infrastructure.unit_of_work import UnitOfWork
 
 
 class CountryService:

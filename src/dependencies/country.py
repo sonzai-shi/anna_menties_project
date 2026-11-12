@@ -1,11 +1,11 @@
 from src.service.country_service import CountryService
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.db import get_read_session
-from src.unit_of_work import UnitOfWork
-from src.db import SessionFactory
+from src.infrastructure.db import get_read_session
+from src.infrastructure.unit_of_work import UnitOfWork
+from src.infrastructure.db import SessionFactory
 from redis.asyncio import Redis
-from src.cache.redis_client import get_redis
+from src.infrastructure.redis_client import get_redis
 
 
 def get_uow() -> UnitOfWork:

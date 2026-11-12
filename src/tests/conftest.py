@@ -6,10 +6,10 @@ from redis.asyncio import Redis
 import pytest
 from testcontainers.postgres import PostgresContainer
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from src.db import get_read_session
+from src.infrastructure.db import get_read_session
 from src.application import get_app
-from src.cache.redis_client import get_redis
-from src.unit_of_work import UnitOfWork
+from src.infrastructure.redis_client import get_redis
+from src.infrastructure.unit_of_work import UnitOfWork
 from src.dependencies.book import get_uow as get_book_uow
 from src.dependencies.course import get_uow as get_course_uow
 from src.dependencies.country import get_uow as get_country_uow

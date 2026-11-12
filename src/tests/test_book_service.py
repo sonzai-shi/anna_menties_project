@@ -7,7 +7,7 @@ from src.schemas.book import BookSchemaResponse, BookSchemaUpdate
 from src.service.book_service import BookService
 from src.models.authors import AuthorModel
 from src.models.books import BookModel
-from src.unit_of_work import UnitOfWork
+from src.infrastructure.unit_of_work import UnitOfWork
 
 
 @pytest.mark.asyncio

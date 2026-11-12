@@ -13,8 +13,8 @@ from redis.asyncio import Redis
 from datetime import datetime
 from src.repositories.repository import Repository
 from src.exceptions.service_exception import ObjectNotFoundException, CursorException
-from src.cache.redis_cache import RedisCache
-from src.unit_of_work import UnitOfWork
+from src.infrastructure.redis_cache import RedisCache
+from src.infrastructure.unit_of_work import UnitOfWork
 
 
 class BookService:

@@ -1,6 +1,6 @@
 import uuid
 import pytest
-from src.unit_of_work import UnitOfWork
+from src.infrastructure.unit_of_work import UnitOfWork
 from src.exceptions.service_exception import ObjectNotFoundException
 from src.schemas.course import CourseSchemaResponse, CourseSchemaUpdate
 from src.service.course_service import CourseService
