@@ -1,5 +1,6 @@
 from uuid import UUID
 from redis.asyncio import Redis
+from src.config import settings
 
 
 class RedisCache:
@@ -7,7 +8,7 @@ class RedisCache:
         self.cache = redis
 
     async def set(self, model_name: str, key: UUID, value: str) -> None:
-        await self.cache.set(f'{model_name}:{key}', value, ex=3600)
+        await self.cache.set(f'{model_name}:{key}', value, ex=settings.redis_cache_ttl)
 
     async def get(self, model_name: str, key: UUID) -> bytes | str | None:
         return await self.cache.get(f'{model_name}:{key}')
