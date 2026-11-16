@@ -3,7 +3,7 @@ from src.service.course_service import CourseService
 from src.infrastructure.db import get_read_session
 from fastapi import Depends
 from redis.asyncio import Redis
-from src.infrastructure.redis_client import get_redis
+from src.dependencies.redis_dependencies import get_redis
 from src.infrastructure.unit_of_work import UnitOfWork
 from src.infrastructure.db import SessionFactory
 

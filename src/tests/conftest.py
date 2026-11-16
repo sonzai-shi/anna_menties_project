@@ -8,7 +8,7 @@ from testcontainers.postgres import PostgresContainer
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.infrastructure.db import get_read_session
 from src.application import get_app
-from src.infrastructure.redis_client import get_redis
+from src.dependencies.redis_dependencies import get_redis
 from src.infrastructure.unit_of_work import UnitOfWork
 from src.dependencies.book import get_uow as get_book_uow
 from src.dependencies.course import get_uow as get_course_uow
