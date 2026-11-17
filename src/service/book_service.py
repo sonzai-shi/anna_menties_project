@@ -21,15 +21,11 @@ class BookService:
     def __init__(
             self,
             redis: Redis,
-            session: AsyncSession | None = None,
-            uow: UnitOfWork | None = None,
+            session: AsyncSession,
+            uow: UnitOfWork,
     ) -> None:
-        if session is not None:
-            self.book_repo = Repository(session)
-            self.uow = None
-        else:
-            self.book_repo = None
-            self.uow = uow
+        self.book_repo = Repository(session)
+        self.uow = uow
         self.book_redis = RedisCache(redis)
 
     async def create_books(self, data: BookSchemaCreate) -> BookSchemaResponse:

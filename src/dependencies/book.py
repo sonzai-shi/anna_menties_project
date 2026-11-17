@@ -1,26 +1,19 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.service.book_service import BookService
-from src.infrastructure.db import get_read_session
+from src.infrastructure.db import get_session
 from fastapi import Depends
 from redis.asyncio import Redis
 from src.dependencies.redis_dependencies import get_redis
 from src.infrastructure.unit_of_work import UnitOfWork
-from src.infrastructure.db import SessionFactory
 
 
-def get_uow() -> UnitOfWork:
-    return UnitOfWork(SessionFactory)
+def get_uow(session: AsyncSession = Depends(get_session)) -> UnitOfWork:
+    return UnitOfWork(session)
 
 
-def get_book_read_service(
-        session: AsyncSession = Depends(get_read_session),
-        redis: Redis = Depends(get_redis),
-) -> BookService:
-    return BookService(redis, session=session, uow=None)
-
-
-def get_book_write_service(
+def get_book_service(
+        session: AsyncSession = Depends(get_session),
         redis: Redis = Depends(get_redis),
         uow: UnitOfWork = Depends(get_uow),
 ) -> BookService:
-    return BookService(redis, session=None, uow=uow)
+    return BookService(redis, session=session, uow=uow)
