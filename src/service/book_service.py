@@ -20,13 +20,13 @@ from src.infrastructure.unit_of_work import UnitOfWork
 class BookService:
     def __init__(
             self,
-            redis: Redis,
-            session: AsyncSession,
+            redis: RedisCache,
+            repository: Repository,
             uow: UnitOfWork,
     ) -> None:
-        self.book_repo = Repository(session)
+        self.book_repo = repository
         self.uow = uow
-        self.book_redis = RedisCache(redis)
+        self.book_redis = redis
 
     async def create_books(self, data: BookSchemaCreate) -> BookSchemaResponse:
         async with self.uow as uow:
