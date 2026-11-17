@@ -1,6 +1,5 @@
 from uuid import UUID
 from fastapi import status
-from sqlalchemy.ext.asyncio import AsyncSession
 from src.mappers import course_mapper
 from src.models.courses import CourseModel
 from src.schemas.course import (
@@ -12,31 +11,25 @@ from src.schemas.course import (
 from datetime import datetime
 from src.repositories.repository import Repository
 from src.exceptions.service_exception import ObjectNotFoundException, CursorException
-from src.infrastructure.redis_cache import RedisCache
 from src.infrastructure.unit_of_work import UnitOfWork
-from redis.asyncio import Redis
+from src.infrastructure.redis_cache import RedisCache
 
 
 class CourseService:
     def __init__(
             self,
-            redis: Redis,
-            session: AsyncSession | None = None,
-            uow: UnitOfWork | None = None,
+            redis: RedisCache,
+            repository: Repository,
+            uow: UnitOfWork,
     ) -> None:
-        if session is not None:
-            self.course_repo = Repository(session)
-            self.uow = None
-        else:
-            self.course_repo = None
-            self.uow = uow
-        self.course_redis = RedisCache(redis)
+        self.course_repo = repository
+        self.uow = uow
+        self.course_redis = redis
 
     async def create_course(self, course_data: CourseSchemaCreate) -> CourseSchemaResponse:
-        async with self.uow as uow:
-            local_course_repo = Repository(uow.session)
+        async with self.uow:
             course = course_mapper.to_model(course_data)
-            result = await local_course_repo.create(course)
+            result = await self.course_repo.create(course)
             schema_response = CourseSchemaResponse.model_validate(result)
         return schema_response
 
@@ -94,20 +87,18 @@ class CourseService:
         )
 
     async def update_course(self, course_id: UUID, data: CourseSchemaUpdate) -> CourseSchemaResponse:
-        async with self.uow as uow:
-            local_course_repo = Repository(uow.session)
-            course = await local_course_repo.find_one(CourseModel, course_id, 'students')
+        async with self.uow:
+            course = await self.course_repo.find_one(CourseModel, course_id, 'students')
             if course is None:
                 self.raise_course_not_found(course_id)
-            await local_course_repo.update_one(CourseModel, course_id, 'students', data)
+            await self.course_repo.update_one(CourseModel, course_id, 'students', data)
             schema_response = CourseSchemaResponse.model_validate(course)
         await self.course_redis.set(model_name='course', key=course_id, value=schema_response.model_dump_json())
         return schema_response
 
     async def delete_course(self, course_id: UUID) -> str:
-        async with self.uow as uow:
-            local_course_repo = Repository(uow.session)
-            result = await local_course_repo.find_one(CourseModel, course_id, 'students')
+        async with self.uow:
+            result = await self.course_repo.find_one(CourseModel, course_id, 'students')
             if result is None:
                 self.raise_course_not_found(course_id)
             result.is_deleted = True

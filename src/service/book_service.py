@@ -1,6 +1,5 @@
 from uuid import UUID
 from fastapi import status
-from sqlalchemy.ext.asyncio import AsyncSession
 from src.mappers import book_mapper
 from src.models.books import BookModel
 from src.schemas.book import (
@@ -9,7 +8,6 @@ from src.schemas.book import (
     BookSchemaUpdate,
     BookSchemaPagination,
 )
-from redis.asyncio import Redis
 from datetime import datetime
 from src.repositories.repository import Repository
 from src.exceptions.service_exception import ObjectNotFoundException, CursorException
@@ -29,10 +27,9 @@ class BookService:
         self.book_redis = redis
 
     async def create_books(self, data: BookSchemaCreate) -> BookSchemaResponse:
-        async with self.uow as uow:
-            local_book_repo = Repository(uow.session)
+        async with self.uow:
             book = book_mapper.to_model(data)
-            result = await local_book_repo.create(book)
+            result = await self.book_repo.create(book)
             schema_response = BookSchemaResponse.model_validate(result)
         return schema_response
 
@@ -81,20 +78,18 @@ class BookService:
         )
 
     async def update_book(self, book_id: UUID, book_data: BookSchemaUpdate) -> BookSchemaResponse:
-        async with self.uow as uow:
-            local_book_repo = Repository(uow.session)
-            book = await local_book_repo.find_one(BookModel, book_id, 'authors')
+        async with self.uow:
+            book = await self.book_repo.find_one(BookModel, book_id, 'authors')
             if book is None:
                 self.raise_book_not_found(book_id)
-            await local_book_repo.update_one(BookModel, book_id, 'authors', book_data)
+            await self.book_repo.update_one(BookModel, book_id, 'authors', book_data)
             schema_response = BookSchemaResponse.model_validate(book)
         await self.book_redis.set(model_name='book', key=book_id, value=schema_response.model_dump_json())
         return schema_response
 
     async def delete_book(self, book_id: UUID) -> str:
-        async with self.uow as uow:
-            local_book_repo = Repository(uow.session)
-            result = await local_book_repo.find_one(BookModel, book_id, 'authors')
+        async with self.uow:
+            result = await self.book_repo.find_one(BookModel, book_id, 'authors')
             if result is None:
                 self.raise_book_not_found(book_id)
             result.is_deleted = True

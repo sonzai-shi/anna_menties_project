@@ -1,6 +1,5 @@
 from uuid import UUID
 from fastapi import status
-from sqlalchemy.ext.asyncio import AsyncSession
 from src.mappers import country_mapper
 from src.models.countries import CountryModel
 from src.schemas.country import (
@@ -13,30 +12,24 @@ from datetime import datetime
 from src.repositories.repository import Repository
 from src.exceptions.service_exception import ObjectNotFoundException, CursorException
 from src.infrastructure.redis_cache import RedisCache
-from redis.asyncio import Redis
 from src.infrastructure.unit_of_work import UnitOfWork
 
 
 class CountryService:
     def __init__(
             self,
-            redis: Redis,
-            session: AsyncSession | None = None,
-            uow: UnitOfWork | None = None,
+            redis: RedisCache,
+            repository: Repository,
+            uow: UnitOfWork,
     ) -> None:
-        if session is not None:
-            self.country_repo = Repository(session)
-            self.uow = None
-        else:
-            self.country_repo = None
-            self.uow = uow
-        self.country_redis = RedisCache(redis)
+        self.country_repo = repository
+        self.uow = uow
+        self.country_redis = redis
 
     async def create_country(self, country_data: CountrySchemaCreate) -> CountrySchemaResponse:
-        async with self.uow as uow:
-            local_country_repo = Repository(uow.session)
+        async with self.uow:
             country = country_mapper.to_model(country_data)
-            result = await local_country_repo.create(country)
+            result = await self.country_repo.create(country)
             schema_response = CountrySchemaResponse.model_validate(result)
         return schema_response
 
@@ -92,20 +85,18 @@ class CountryService:
         )
 
     async def update_country(self, country_id: UUID, data: CountrySchemaUpdate) -> CountrySchemaResponse:
-        async with self.uow as uow:
-            local_country_repo = Repository(uow.session)
-            country = await local_country_repo.find_one(CountryModel, country_id, 'capital')
+        async with self.uow:
+            country = await self.country_repo.find_one(CountryModel, country_id, 'capital')
             if country is None:
                 self.raise_country_not_found(country_id)
-            await local_country_repo.update_one(CountryModel, country_id, 'capital', data)
+            await self.country_repo.update_one(CountryModel, country_id, 'capital', data)
             schema_response = CountrySchemaResponse.model_validate(country)
         await self.country_redis.set(model_name='country', key=country_id, value=schema_response.model_dump_json())
         return schema_response
 
     async def delete_country(self, country_id: UUID) -> str:
-        async with self.uow as uow:
-            local_country_repo = Repository(uow.session)
-            result = await local_country_repo.find_one(CountryModel, country_id, 'capital')
+        async with self.uow:
+            result = await self.country_repo.find_one(CountryModel, country_id, 'capital')
             if result is None:
                 self.raise_country_not_found(country_id)
             result.is_deleted = True
