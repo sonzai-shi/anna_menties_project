@@ -16,6 +16,9 @@ from src.infrastructure.redis_cache import RedisCache
 
 
 class CourseService:
+    MODEL_NAME = 'course'
+    RELATION_NAME = 'students'
+
     def __init__(
             self,
             redis: RedisCache,
@@ -34,12 +37,12 @@ class CourseService:
         return schema_response
 
     async def read_course(self, course_id: UUID) -> CourseSchemaResponse:
-        result_cache = await self.course_redis.get(model_name='course', key=course_id)
+        result_cache = await self.course_redis.get(model_name=self.MODEL_NAME, key=course_id)
         if result_cache:
             return CourseSchemaResponse.model_validate_json(result_cache)
         result = await self.find_course(course_id)
         schema_response = CourseSchemaResponse.model_validate(result)
-        await self.course_redis.set(model_name='course', key=course_id, value=schema_response.model_dump_json())
+        await self.course_redis.set(model_name=self.MODEL_NAME, key=course_id, value=schema_response.model_dump_json())
         return schema_response
 
     async def read_courses(
@@ -55,7 +58,7 @@ class CourseService:
             )
         result = await self.course_repo.find_many(
             model=CourseModel,
-            join_orm='students',
+            join_orm=self.RELATION_NAME,
             limit=limit,
             cursor_created_at=cursor_created_at,
             cursor_id=cursor_id,
@@ -75,7 +78,7 @@ class CourseService:
             for course in result
         }
         await self.course_redis.sets(
-            model_name='course',
+            model_name=self.MODEL_NAME,
             data=course_cache_data,
         )
 
@@ -88,17 +91,17 @@ class CourseService:
 
     async def update_course(self, course_id: UUID, data: CourseSchemaUpdate) -> CourseSchemaResponse:
         async with self.uow:
-            course = await self.course_repo.find_one(CourseModel, course_id, 'students')
+            course = await self.course_repo.find_one(CourseModel, course_id, self.RELATION_NAME)
             if course is None:
                 self.raise_course_not_found(course_id)
-            await self.course_repo.update_one(CourseModel, course_id, 'students', data)
+            await self.course_repo.update_one(CourseModel, course_id, self.RELATION_NAME, data)
             schema_response = CourseSchemaResponse.model_validate(course)
-        await self.course_redis.set(model_name='course', key=course_id, value=schema_response.model_dump_json())
+        await self.course_redis.set(model_name=self.MODEL_NAME, key=course_id, value=schema_response.model_dump_json())
         return schema_response
 
     async def delete_course(self, course_id: UUID) -> str:
         async with self.uow:
-            result = await self.course_repo.find_one(CourseModel, course_id, 'students')
+            result = await self.course_repo.find_one(CourseModel, course_id, self.RELATION_NAME)
             if result is None:
                 self.raise_course_not_found(course_id)
             result.is_deleted = True
@@ -107,7 +110,7 @@ class CourseService:
         return f'Course with ID: {course_id} has been removed.'
 
     async def find_course(self, course_id: UUID) -> CourseModel:
-        result = await self.course_repo.find_one(CourseModel, course_id, 'students')
+        result = await self.course_repo.find_one(CourseModel, course_id, self.RELATION_NAME)
         if result is None:
             self.raise_course_not_found(course_id)
         return result

@@ -16,6 +16,9 @@ from src.infrastructure.unit_of_work import UnitOfWork
 
 
 class BookService:
+    MODEL_NAME = 'book'
+    RELATION_NAME = 'authors'
+
     def __init__(
             self,
             redis: RedisCache,
@@ -34,12 +37,12 @@ class BookService:
         return schema_response
 
     async def read_book(self, book_id: UUID) -> BookSchemaResponse:
-        result_cache = await self.book_redis.get(model_name='book', key=book_id)
+        result_cache = await self.book_redis.get(model_name=self.MODEL_NAME, key=book_id)
         if result_cache:
             return BookSchemaResponse.model_validate_json(result_cache)
         result = await self.find_book(book_id)
         schema_response = BookSchemaResponse.model_validate(result)
-        await self.book_redis.set(model_name='book', key=book_id, value=schema_response.model_dump_json())
+        await self.book_redis.set(model_name=self.MODEL_NAME, key=book_id, value=schema_response.model_dump_json())
         return schema_response
 
     async def read_books(self, limit: int, cursor_created_at: datetime | None,
@@ -51,7 +54,7 @@ class BookService:
             )
         result = await self.book_repo.find_many(
             model=BookModel,
-            join_orm='authors',
+            join_orm=self.RELATION_NAME,
             limit=limit,
             cursor_created_at=cursor_created_at,
             cursor_id=cursor_id,
@@ -66,7 +69,7 @@ class BookService:
 
         books_cache_data = {book.id: BookSchemaResponse.model_validate(book).model_dump_json() for book in result}
         await self.book_redis.sets(
-            model_name='book',
+            model_name=self.MODEL_NAME,
             data=books_cache_data,
         )
 
@@ -79,24 +82,24 @@ class BookService:
 
     async def update_book(self, book_id: UUID, book_data: BookSchemaUpdate) -> BookSchemaResponse:
         async with self.uow:
-            book = await self.book_repo.find_one(BookModel, book_id, 'authors')
+            book = await self.book_repo.find_one(BookModel, book_id, self.RELATION_NAME)
             if book is None:
                 self.raise_book_not_found(book_id)
-            await self.book_repo.update_one(BookModel, book_id, 'authors', book_data)
+            await self.book_repo.update_one(BookModel, book_id, self.RELATION_NAME, book_data)
             schema_response = BookSchemaResponse.model_validate(book)
-        await self.book_redis.set(model_name='book', key=book_id, value=schema_response.model_dump_json())
+        await self.book_redis.set(model_name=self.MODEL_NAME, key=book_id, value=schema_response.model_dump_json())
         return schema_response
 
     async def delete_book(self, book_id: UUID) -> str:
         async with self.uow:
-            result = await self.book_repo.find_one(BookModel, book_id, 'authors')
+            result = await self.book_repo.find_one(BookModel, book_id, self.RELATION_NAME)
             if result is None:
                 self.raise_book_not_found(book_id)
             result.is_deleted = True
         return f'Book with ID: {book_id} has been deleted.'
 
     async def find_book(self, book_id: UUID) -> BookModel:
-        result = await self.book_repo.find_one(BookModel, book_id, 'authors')
+        result = await self.book_repo.find_one(BookModel, book_id, self.RELATION_NAME)
         if result is None:
             self.raise_book_not_found(book_id)
         return result

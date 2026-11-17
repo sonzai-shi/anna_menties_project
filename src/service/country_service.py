@@ -16,6 +16,9 @@ from src.infrastructure.unit_of_work import UnitOfWork
 
 
 class CountryService:
+    MODEL_NAME = 'country'
+    RELATION_NAME = 'capital'
+
     def __init__(
             self,
             redis: RedisCache,
@@ -34,12 +37,12 @@ class CountryService:
         return schema_response
 
     async def read_country(self, country_id: UUID) -> CountrySchemaResponse:
-        result_cache = await self.country_redis.get(model_name='country', key=country_id)
+        result_cache = await self.country_redis.get(model_name=self.MODEL_NAME, key=country_id)
         if result_cache:
             return CountrySchemaResponse.model_validate_json(result_cache)
         result = await self.find_country(country_id)
         schema_response = CountrySchemaResponse.model_validate(result)
-        await self.country_redis.set(model_name='country', key=country_id, value=schema_response.model_dump_json())
+        await self.country_redis.set(model_name=self.MODEL_NAME, key=country_id, value=schema_response.model_dump_json())
         return schema_response
 
     async def read_countries(
@@ -55,7 +58,7 @@ class CountryService:
             )
         result = await self.country_repo.find_many(
             model=CountryModel,
-            join_orm='capital',
+            join_orm=self.RELATION_NAME,
             limit=limit,
             cursor_created_at=cursor_created_at,
             cursor_id=cursor_id,
@@ -75,7 +78,7 @@ class CountryService:
                 .model_dump_json()
             for country in result
         }
-        await self.country_redis.sets(model_name='country', data=country_cache_data, )
+        await self.country_redis.sets(model_name=self.MODEL_NAME, data=country_cache_data, )
 
         return country_mapper.to_pagination(
             countries=result,
@@ -86,17 +89,17 @@ class CountryService:
 
     async def update_country(self, country_id: UUID, data: CountrySchemaUpdate) -> CountrySchemaResponse:
         async with self.uow:
-            country = await self.country_repo.find_one(CountryModel, country_id, 'capital')
+            country = await self.country_repo.find_one(CountryModel, country_id, self.RELATION_NAME)
             if country is None:
                 self.raise_country_not_found(country_id)
-            await self.country_repo.update_one(CountryModel, country_id, 'capital', data)
+            await self.country_repo.update_one(CountryModel, country_id, self.RELATION_NAME, data)
             schema_response = CountrySchemaResponse.model_validate(country)
-        await self.country_redis.set(model_name='country', key=country_id, value=schema_response.model_dump_json())
+        await self.country_redis.set(model_name=self.MODEL_NAME, key=country_id, value=schema_response.model_dump_json())
         return schema_response
 
     async def delete_country(self, country_id: UUID) -> str:
         async with self.uow:
-            result = await self.country_repo.find_one(CountryModel, country_id, 'capital')
+            result = await self.country_repo.find_one(CountryModel, country_id, self.RELATION_NAME)
             if result is None:
                 self.raise_country_not_found(country_id)
             result.is_deleted = True
@@ -104,7 +107,7 @@ class CountryService:
         return f'Country with ID: {country_id} has been removed.'
 
     async def find_country(self, country_id: UUID) -> CountryModel:
-        result = await self.country_repo.find_one(CountryModel, country_id, 'capital')
+        result = await self.country_repo.find_one(CountryModel, country_id, self.RELATION_NAME)
         if result is None:
             self.raise_country_not_found(country_id)
         return result
