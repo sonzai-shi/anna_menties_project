@@ -89,19 +89,15 @@ class CountryService:
 
     async def update_country(self, country_id: UUID, data: CountrySchemaUpdate) -> CountrySchemaResponse:
         async with self.uow:
-            country = await self.country_repo.find_one(CountryModel, country_id, self.RELATION_NAME)
-            if country is None:
-                self.raise_country_not_found(country_id)
+            result = await self.find_country(country_id)
             await self.country_repo.update_one(CountryModel, country_id, self.RELATION_NAME, data)
-            schema_response = CountrySchemaResponse.model_validate(country)
+            schema_response = CountrySchemaResponse.model_validate(result)
         await self.country_redis.set(model_name=self.MODEL_NAME, key=country_id, value=schema_response.model_dump_json())
         return schema_response
 
     async def delete_country(self, country_id: UUID) -> str:
         async with self.uow:
-            result = await self.country_repo.find_one(CountryModel, country_id, self.RELATION_NAME)
-            if result is None:
-                self.raise_country_not_found(country_id)
+            result = await self.find_country(country_id)
             result.is_deleted = True
             result.capital.is_deleted = True
         return f'Country with ID: {country_id} has been removed.'
@@ -109,11 +105,8 @@ class CountryService:
     async def find_country(self, country_id: UUID) -> CountryModel:
         result = await self.country_repo.find_one(CountryModel, country_id, self.RELATION_NAME)
         if result is None:
-            self.raise_country_not_found(country_id)
+            raise ObjectNotFoundException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f'Country with ID: {country_id} not found.'
+            )
         return result
-
-    def raise_country_not_found(self, country_id: UUID):
-        raise ObjectNotFoundException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f'Country with ID: {country_id} not found.'
-        )

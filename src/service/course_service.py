@@ -91,19 +91,15 @@ class CourseService:
 
     async def update_course(self, course_id: UUID, data: CourseSchemaUpdate) -> CourseSchemaResponse:
         async with self.uow:
-            course = await self.course_repo.find_one(CourseModel, course_id, self.RELATION_NAME)
-            if course is None:
-                self.raise_course_not_found(course_id)
+            result = await self.find_course(course_id)
             await self.course_repo.update_one(CourseModel, course_id, self.RELATION_NAME, data)
-            schema_response = CourseSchemaResponse.model_validate(course)
+            schema_response = CourseSchemaResponse.model_validate(result)
         await self.course_redis.set(model_name=self.MODEL_NAME, key=course_id, value=schema_response.model_dump_json())
         return schema_response
 
     async def delete_course(self, course_id: UUID) -> str:
         async with self.uow:
-            result = await self.course_repo.find_one(CourseModel, course_id, self.RELATION_NAME)
-            if result is None:
-                self.raise_course_not_found(course_id)
+            result = await self.find_course(course_id)
             result.is_deleted = True
             for student in result.students:
                 student.is_deleted = True
@@ -112,11 +108,9 @@ class CourseService:
     async def find_course(self, course_id: UUID) -> CourseModel:
         result = await self.course_repo.find_one(CourseModel, course_id, self.RELATION_NAME)
         if result is None:
-            self.raise_course_not_found(course_id)
-        return result
+            raise ObjectNotFoundException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f'Course with ID: {course_id} not found.'
+            )
 
-    def raise_course_not_found(self, course_id: UUID):
-        raise ObjectNotFoundException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f'Course with ID: {course_id} not found.'
-        )
+        return result

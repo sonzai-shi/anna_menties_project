@@ -82,30 +82,23 @@ class BookService:
 
     async def update_book(self, book_id: UUID, book_data: BookSchemaUpdate) -> BookSchemaResponse:
         async with self.uow:
-            book = await self.book_repo.find_one(BookModel, book_id, self.RELATION_NAME)
-            if book is None:
-                self.raise_book_not_found(book_id)
+            result = await self.find_book(book_id)
             await self.book_repo.update_one(BookModel, book_id, self.RELATION_NAME, book_data)
-            schema_response = BookSchemaResponse.model_validate(book)
+            schema_response = BookSchemaResponse.model_validate(result)
         await self.book_redis.set(model_name=self.MODEL_NAME, key=book_id, value=schema_response.model_dump_json())
         return schema_response
 
     async def delete_book(self, book_id: UUID) -> str:
         async with self.uow:
-            result = await self.book_repo.find_one(BookModel, book_id, self.RELATION_NAME)
-            if result is None:
-                self.raise_book_not_found(book_id)
+            result = await self.find_book(book_id)
             result.is_deleted = True
         return f'Book with ID: {book_id} has been deleted.'
 
     async def find_book(self, book_id: UUID) -> BookModel:
         result = await self.book_repo.find_one(BookModel, book_id, self.RELATION_NAME)
         if result is None:
-            self.raise_book_not_found(book_id)
+            raise ObjectNotFoundException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f'Book with ID: {book_id} not found.'
+            )
         return result
-
-    def raise_book_not_found(self, book_id: UUID):
-        raise ObjectNotFoundException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f'Book with ID: {book_id} not found.'
-        )
