@@ -8,7 +8,7 @@ from src.schemas.country import (
     CountrySchemaPagination
 )
 from datetime import datetime
-from src.dependencies.country import get_country_write_service, get_country_read_service
+from src.dependencies.country import get_country_service
 
 router = APIRouter(prefix="/country")
 
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/country")
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_country(
         data: CountrySchemaCreate,
-        country_service: CountryService = Depends(get_country_write_service),
+        country_service: CountryService = Depends(get_country_service),
 ) -> CountrySchemaResponse:
     return await country_service.create_country(data)
 
@@ -24,7 +24,7 @@ async def create_country(
 @router.get("/{id_country}")
 async def read_country(
         id_country: UUID,
-        country_service: CountryService = Depends(get_country_read_service),
+        country_service: CountryService = Depends(get_country_service),
 ) -> CountrySchemaResponse:
     return await country_service.read_country(id_country)
 
@@ -34,7 +34,7 @@ async def read_countries(
         limit: int,
         cursor_created_at: datetime | None = None,
         cursor_id: UUID | None = None,
-        country_service: CountryService = Depends(get_country_read_service),
+        country_service: CountryService = Depends(get_country_service),
 ) -> CountrySchemaPagination:
     return await country_service.read_countries(limit, cursor_created_at, cursor_id)
 
@@ -43,7 +43,7 @@ async def read_countries(
 async def update_country(
         id_country: UUID,
         data: CountrySchemaUpdate,
-        country_service: CountryService = Depends(get_country_write_service),
+        country_service: CountryService = Depends(get_country_service),
 ) -> CountrySchemaResponse:
     return await country_service.update_country(id_country, data)
 
@@ -51,7 +51,7 @@ async def update_country(
 @router.delete("/{id_country}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_country(
         id_country: UUID,
-        country_service: CountryService = Depends(get_country_write_service),
+        country_service: CountryService = Depends(get_country_service),
 ) -> None:
     await country_service.delete_country(id_country)
     return None

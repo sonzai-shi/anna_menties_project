@@ -1,6 +1,5 @@
 from uuid import UUID
 from fastapi import status
-from sqlalchemy.ext.asyncio import AsyncSession
 from src.mappers import book_mapper
 from src.models.books import BookModel
 from src.schemas.book import (
@@ -12,20 +11,40 @@ from src.schemas.book import (
 from datetime import datetime
 from src.repositories.repository import Repository
 from src.exceptions.service_exception import ObjectNotFoundException, CursorException
+from src.infrastructure.redis_cache import RedisCache
+from src.infrastructure.unit_of_work import UnitOfWork
 
 
 class BookService:
-    def __init__(self, session: AsyncSession):
-        self.book_repo = Repository(session)
+    MODEL_NAME = 'book'
+    RELATION_NAME = 'authors'
+
+    def __init__(
+            self,
+            redis: RedisCache,
+            repository: Repository,
+            uow: UnitOfWork,
+    ) -> None:
+        self.book_repo = repository
+        self.uow = uow
+        self.book_redis = redis
 
     async def create_books(self, data: BookSchemaCreate) -> BookSchemaResponse:
-        book = book_mapper.to_model(data)
-        result = await self.book_repo.create(book)
-        return BookSchemaResponse.model_validate(result)
+        async with self.uow:
+            book = book_mapper.to_model(data)
+            result = await self.book_repo.create(book)
+            schema_response = BookSchemaResponse.model_validate(result)
+        await self.book_redis.delete_all_pages(f'{self.MODEL_NAME}:page:*')
+        return schema_response
 
     async def read_book(self, book_id: UUID) -> BookSchemaResponse:
+        result_cache = await self.book_redis.get(model_name=self.MODEL_NAME, key=book_id)
+        if result_cache:
+            return BookSchemaResponse.model_validate_json(result_cache)
         result = await self.find_book(book_id)
-        return BookSchemaResponse.model_validate(result)
+        schema_response = BookSchemaResponse.model_validate(result)
+        await self.book_redis.set(model_name=self.MODEL_NAME, key=book_id, value=schema_response.model_dump_json())
+        return schema_response
 
     async def read_books(self, limit: int, cursor_created_at: datetime | None,
                          cursor_id: UUID | None) -> BookSchemaPagination:
@@ -34,9 +53,16 @@ class BookService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f'You must provide both cursor_created_at and cursor_id.'
             )
+        if cursor_created_at is None:
+            page_key = f'page:{limit}:None:{cursor_id}'
+        else:
+            page_key = f'page:{limit}:{cursor_created_at.isoformat()}:{cursor_id}'
+        result_cache = await self.book_redis.get(model_name=self.MODEL_NAME, key=page_key)
+        if result_cache:
+            return BookSchemaPagination.model_validate_json(result_cache)
         result = await self.book_repo.find_many(
             model=BookModel,
-            join_orm='authors',
+            join_orm=self.RELATION_NAME,
             limit=limit,
             cursor_created_at=cursor_created_at,
             cursor_id=cursor_id,
@@ -49,25 +75,38 @@ class BookService:
             next_cursor_created_at = last_book.created_at
             next_cursor_id = last_book.id
 
-        return book_mapper.to_paginated(
+        books_cache_data = {book.id: BookSchemaResponse.model_validate(book).model_dump_json() for book in result}
+        await self.book_redis.sets(
+            model_name=self.MODEL_NAME,
+            data=books_cache_data,
+        )
+        page_response = book_mapper.to_paginated(
             books=result,
             limit=limit,
             next_cursor_created_at=next_cursor_created_at,
             next_cursor_id=next_cursor_id,
         )
+        await  self.book_redis.set(model_name=self.MODEL_NAME, key=page_key, value=page_response.model_dump_json())
+        return page_response
 
     async def update_book(self, book_id: UUID, book_data: BookSchemaUpdate) -> BookSchemaResponse:
-        book = await self.find_book(book_id)
-        await self.book_repo.update_one(BookModel, book_id, 'authors', book_data)
-        return BookSchemaResponse.model_validate(book)
+        async with self.uow:
+            result = await self.find_book(book_id)
+            await self.book_repo.update_one(BookModel, book_id, self.RELATION_NAME, book_data)
+            schema_response = BookSchemaResponse.model_validate(result)
+        await self.book_redis.delete_all_pages(f'{self.MODEL_NAME}:page:*')
+        await self.book_redis.set(model_name=self.MODEL_NAME, key=book_id, value=schema_response.model_dump_json())
+        return schema_response
 
     async def delete_book(self, book_id: UUID) -> str:
-        result = await self.find_book(book_id)
-        result.is_deleted = True
+        async with self.uow:
+            result = await self.find_book(book_id)
+            result.is_deleted = True
+        await self.book_redis.delete_all_pages(f'{self.MODEL_NAME}:page:*')
         return f'Book with ID: {book_id} has been deleted.'
 
     async def find_book(self, book_id: UUID) -> BookModel:
-        result = await self.book_repo.find_one(BookModel, book_id, 'authors')
+        result = await self.book_repo.find_one(BookModel, book_id, self.RELATION_NAME)
         if result is None:
             raise ObjectNotFoundException(
                 status_code=status.HTTP_404_NOT_FOUND,
