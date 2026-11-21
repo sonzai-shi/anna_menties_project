@@ -6,13 +6,9 @@ from redis.asyncio import Redis
 import pytest
 from testcontainers.postgres import PostgresContainer
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from src.infrastructure.db import get_read_session
+from src.infrastructure.db import get_session
 from src.application import get_app
 from src.dependencies.redis_dependencies import get_redis
-from src.infrastructure.unit_of_work import UnitOfWork
-from src.dependencies.book import get_uow as get_book_uow
-from src.dependencies.course import get_uow as get_course_uow
-from src.dependencies.country import get_uow as get_country_uow
 import httpx
 from src.models.authors import AuthorModel
 from src.models.books import BookModel
@@ -96,18 +92,12 @@ def test_app(redis_client, db_session_factory, db_session):
     def return_redis():
         return redis_client
 
-    async def override_read_session():
+    async def override_session():
         async with db_session_factory() as session:
             yield session
 
-    def override_uow():
-        return UnitOfWork(db_session_factory)
-
     app.dependency_overrides[get_redis] = return_redis
-    app.dependency_overrides[get_read_session] = override_read_session
-    app.dependency_overrides[get_book_uow] = override_uow
-    app.dependency_overrides[get_course_uow] = override_uow
-    app.dependency_overrides[get_country_uow] = override_uow
+    app.dependency_overrides[get_session] = override_session
     yield app
 
 
