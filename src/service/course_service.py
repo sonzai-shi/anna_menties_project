@@ -34,6 +34,7 @@ class CourseService:
             course = course_mapper.to_model(course_data)
             result = await self.course_repo.create(course)
             schema_response = CourseSchemaResponse.model_validate(result)
+        await self.course_redis.delete_all_pages(f'{self.MODEL_NAME}:page:*')
         return schema_response
 
     async def read_course(self, course_id: UUID) -> CourseSchemaResponse:
@@ -56,6 +57,13 @@ class CourseService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f'You must provide both cursor_created_at and cursor_id.'
             )
+        if cursor_created_at is None:
+            page_key = f'page:{limit}:None:{cursor_id}'
+        else:
+            page_key = f'page:{limit}:{cursor_created_at.isoformat()}:{cursor_id}'
+        result_cache = await self.course_redis.get(model_name=self.MODEL_NAME, key=page_key)
+        if result_cache:
+            return CourseSchemaPagination.model_validate_json(result_cache)
         result = await self.course_repo.find_many(
             model=CourseModel,
             join_orm=self.RELATION_NAME,
@@ -81,19 +89,21 @@ class CourseService:
             model_name=self.MODEL_NAME,
             data=course_cache_data,
         )
-
-        return course_mapper.to_pagination(
+        page_response = course_mapper.to_pagination(
             courses=list(result),
             limit=limit,
             next_cursor_created_at=next_cursor_created_at,
             next_cursor_id=next_cursor_id,
         )
+        await  self.course_redis.set(model_name=self.MODEL_NAME, key=page_key, value=page_response.model_dump_json())
+        return page_response
 
     async def update_course(self, course_id: UUID, data: CourseSchemaUpdate) -> CourseSchemaResponse:
         async with self.uow:
             result = await self.find_course(course_id)
             await self.course_repo.update_one(CourseModel, course_id, self.RELATION_NAME, data)
             schema_response = CourseSchemaResponse.model_validate(result)
+        await self.course_redis.delete_all_pages(f'{self.MODEL_NAME}:page:*')
         await self.course_redis.set(model_name=self.MODEL_NAME, key=course_id, value=schema_response.model_dump_json())
         return schema_response
 
@@ -103,6 +113,7 @@ class CourseService:
             result.is_deleted = True
             for student in result.students:
                 student.is_deleted = True
+        await self.course_redis.delete_all_pages(f'{self.MODEL_NAME}:page:*')
         return f'Course with ID: {course_id} has been removed.'
 
     async def find_course(self, course_id: UUID) -> CourseModel:

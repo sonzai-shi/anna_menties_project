@@ -34,6 +34,7 @@ class BookService:
             book = book_mapper.to_model(data)
             result = await self.book_repo.create(book)
             schema_response = BookSchemaResponse.model_validate(result)
+        await self.book_redis.delete_all_pages(f'{self.MODEL_NAME}:page:*')
         return schema_response
 
     async def read_book(self, book_id: UUID) -> BookSchemaResponse:
@@ -52,6 +53,13 @@ class BookService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f'You must provide both cursor_created_at and cursor_id.'
             )
+        if cursor_created_at is None:
+            page_key = f'page:{limit}:None:{cursor_id}'
+        else:
+            page_key = f'page:{limit}:{cursor_created_at.isoformat()}:{cursor_id}'
+        result_cache = await self.book_redis.get(model_name=self.MODEL_NAME, key=page_key)
+        if result_cache:
+            return BookSchemaPagination.model_validate_json(result_cache)
         result = await self.book_repo.find_many(
             model=BookModel,
             join_orm=self.RELATION_NAME,
@@ -72,19 +80,21 @@ class BookService:
             model_name=self.MODEL_NAME,
             data=books_cache_data,
         )
-
-        return book_mapper.to_paginated(
+        page_response = book_mapper.to_paginated(
             books=result,
             limit=limit,
             next_cursor_created_at=next_cursor_created_at,
             next_cursor_id=next_cursor_id,
         )
+        await  self.book_redis.set(model_name=self.MODEL_NAME, key=page_key, value=page_response.model_dump_json())
+        return page_response
 
     async def update_book(self, book_id: UUID, book_data: BookSchemaUpdate) -> BookSchemaResponse:
         async with self.uow:
             result = await self.find_book(book_id)
             await self.book_repo.update_one(BookModel, book_id, self.RELATION_NAME, book_data)
             schema_response = BookSchemaResponse.model_validate(result)
+        await self.book_redis.delete_all_pages(f'{self.MODEL_NAME}:page:*')
         await self.book_redis.set(model_name=self.MODEL_NAME, key=book_id, value=schema_response.model_dump_json())
         return schema_response
 
@@ -92,6 +102,7 @@ class BookService:
         async with self.uow:
             result = await self.find_book(book_id)
             result.is_deleted = True
+        await self.book_redis.delete_all_pages(f'{self.MODEL_NAME}:page:*')
         return f'Book with ID: {book_id} has been deleted.'
 
     async def find_book(self, book_id: UUID) -> BookModel:

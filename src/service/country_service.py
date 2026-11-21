@@ -34,6 +34,7 @@ class CountryService:
             country = country_mapper.to_model(country_data)
             result = await self.country_repo.create(country)
             schema_response = CountrySchemaResponse.model_validate(result)
+        await self.country_redis.delete_all_pages(f'{self.MODEL_NAME}:page:*')
         return schema_response
 
     async def read_country(self, country_id: UUID) -> CountrySchemaResponse:
@@ -42,7 +43,8 @@ class CountryService:
             return CountrySchemaResponse.model_validate_json(result_cache)
         result = await self.find_country(country_id)
         schema_response = CountrySchemaResponse.model_validate(result)
-        await self.country_redis.set(model_name=self.MODEL_NAME, key=country_id, value=schema_response.model_dump_json())
+        await self.country_redis.set(model_name=self.MODEL_NAME, key=country_id,
+                                     value=schema_response.model_dump_json())
         return schema_response
 
     async def read_countries(
@@ -56,6 +58,13 @@ class CountryService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f'You must provide both cursor_created_at and cursor_id.'
             )
+        if cursor_created_at is None:
+            page_key = f'page:{limit}:None:{cursor_id}'
+        else:
+            page_key = f'page:{limit}:{cursor_created_at.isoformat()}:{cursor_id}'
+        result_cache = await self.country_redis.get(model_name=self.MODEL_NAME, key=page_key)
+        if result_cache:
+            return CountrySchemaPagination.model_validate_json(result_cache)
         result = await self.country_repo.find_many(
             model=CountryModel,
             join_orm=self.RELATION_NAME,
@@ -79,20 +88,23 @@ class CountryService:
             for country in result
         }
         await self.country_redis.sets(model_name=self.MODEL_NAME, data=country_cache_data, )
-
-        return country_mapper.to_pagination(
+        page_response = country_mapper.to_pagination(
             countries=result,
             limit=limit,
             next_cursor_created_at=next_cursor_created_at,
             next_cursor_id=next_cursor_id,
         )
+        await  self.country_redis.set(model_name=self.MODEL_NAME, key=page_key, value=page_response.model_dump_json())
+        return page_response
 
     async def update_country(self, country_id: UUID, data: CountrySchemaUpdate) -> CountrySchemaResponse:
         async with self.uow:
             result = await self.find_country(country_id)
             await self.country_repo.update_one(CountryModel, country_id, self.RELATION_NAME, data)
             schema_response = CountrySchemaResponse.model_validate(result)
-        await self.country_redis.set(model_name=self.MODEL_NAME, key=country_id, value=schema_response.model_dump_json())
+        await self.country_redis.delete_all_pages(f'{self.MODEL_NAME}:page:*')
+        await self.country_redis.set(model_name=self.MODEL_NAME, key=country_id,
+                                     value=schema_response.model_dump_json())
         return schema_response
 
     async def delete_country(self, country_id: UUID) -> str:
@@ -100,6 +112,7 @@ class CountryService:
             result = await self.find_country(country_id)
             result.is_deleted = True
             result.capital.is_deleted = True
+        await self.country_redis.delete_all_pages(f'{self.MODEL_NAME}:page:*')
         return f'Country with ID: {country_id} has been removed.'
 
     async def find_country(self, country_id: UUID) -> CountryModel:
